@@ -39,7 +39,7 @@ class Question extends Model
      * انواع سوالات قابل استفاده
      */
     public const TYPES = [
-        'number' => 'عددی',
+        'text' => 'متنی',
         'upload' => 'آپلود فایل',
     ];
 
