@@ -128,20 +128,21 @@ class ViewQuestion extends ViewRecord
                     ->icon('heroicon-o-list-bullet')
                     ->schema([
                         Components\RepeatableEntry::make('options')
-                            ->label('')
                             ->schema([
                                 Components\Grid::make(4)
                                     ->schema([
                                         Components\TextEntry::make('text')
                                             ->label('متن گزینه')
                                             ->weight(FontWeight::Medium)
-                                            ->columnSpan(3),
+                                            ->columnSpan(3)
+                                            ->getStateUsing(fn ($record) => strval($record['text'] ?? '')),
 
                                         Components\TextEntry::make('value')
                                             ->label('مقدار')
                                             ->badge()
                                             ->color('gray')
                                             ->columnSpan(1)
+                                            ->getStateUsing(fn ($record) => strval($record['value'] ?? ''))
                                             ->placeholder('بدون مقدار'),
                                     ]),
                             ])
@@ -177,15 +178,23 @@ class ViewQuestion extends ViewRecord
                     ->description('تنظیمات اضافی و پیکربندی‌های خاص سوال')
                     ->icon('heroicon-o-cog-6-tooth')
                     ->schema([
-                        Components\KeyValueEntry::make('settings')
-                            ->label('تنظیمات اضافی')
-                            ->keyLabel('تنظیم')
-                            ->valueLabel('مقدار')
+                        Components\TextEntry::make('settings')
+                            ->label('تنظیمات')
+                            ->getStateUsing(function ($record) {
+                                if (empty($record->settings) || !is_array($record->settings)) {
+                                    return 'تنظیماتی تعریف نشده است';
+                                }
+
+                                return collect($record->settings)
+                                    ->map(fn ($value, $key) => sprintf("%s: %s", $key, is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE) : strval($value)))
+                                    ->join("\n");
+                            })
                             ->columnSpanFull(),
                     ])
                     ->visible(fn ($record) => !empty($record->settings) && is_array($record->settings))
                     ->collapsible()
                     ->collapsed(),
+
 
                 // بخش تنظیمات نمایش
                 Components\Section::make('تنظیمات نمایش و رفتار')
