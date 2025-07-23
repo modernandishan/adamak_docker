@@ -39,13 +39,8 @@ class Question extends Model
      * انواع سوالات قابل استفاده
      */
     public const TYPES = [
-        'multiple_choice' => 'چند گزینه‌ای چند جوابی',
-        'single_choice' => 'چند گزینه‌ای تک جوابی',
-        'true_false' => 'صحیح/غلط',
-        'text' => 'متنی',
         'number' => 'عددی',
         'upload' => 'آپلود فایل',
-        'date' => 'تاریخ',
     ];
 
     /**
@@ -145,52 +140,6 @@ class Question extends Model
         return $defaults[$this->type] ?? [];
     }
 
-    /**
-     * بررسی اعتبار پاسخ براساس نوع سوال
-     */
-    public function validateAnswer($answer): bool
-    {
-        if ($this->is_required && empty($answer)) {
-            return false;
-        }
-
-        switch ($this->type) {
-            case 'multiple_choice':
-                return is_array($answer) &&
-                    (!empty($this->settings['min_selections'] ?? null) ?
-                        count($answer) >= $this->settings['min_selections'] : true) &&
-                    (!empty($this->settings['max_selections'] ?? null) ?
-                        count($answer) <= $this->settings['max_selections'] : true);
-
-            case 'single_choice':
-                return is_string($answer) && in_array($answer, array_keys($this->options ?? []));
-
-            case 'true_false':
-                return is_bool($answer) || in_array($answer, ['true', 'false', '0', '1']);
-
-            case 'number':
-                return is_numeric($answer) &&
-                    (!empty($this->settings['min'] ?? null) ?
-                        $answer >= $this->settings['min'] : true) &&
-                    (!empty($this->settings['max'] ?? null) ?
-                        $answer <= $this->settings['max'] : true);
-
-            case 'date':
-                try {
-                    $date = Carbon::createFromFormat($this->settings['format'] ?? 'Y-m-d', $answer);
-                    return $date !== false;
-                } catch (\Exception $e) {
-                    return false;
-                }
-
-            default:
-                return true;
-        }
-    }
-
-    /**
-     * Hook قبل از ذخیره برای تنظیم مقادیر پیش‌فرض
-     */
     protected static function boot()
     {
         parent::boot();

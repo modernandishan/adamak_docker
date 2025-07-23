@@ -18,13 +18,8 @@ return new class extends Migration
             $table->string('title');
             $table->longText('description')->nullable();
             $table->enum('type', [
-                'multiple_choice',    // چند گزینه‌ای چند جوابی
-                'single_choice',      // چند گزینه‌ای تک جوابی
-                'true_false',         // صحیح/غلط
-                'text',               // متنی
-                'number',             // عددی
-                'upload',            // آپلود فایل
-                'date',              // تاریخ
+                'text',
+                'upload',
             ])->index();
 
             // تنظیمات سوال
