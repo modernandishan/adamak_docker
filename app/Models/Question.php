@@ -140,6 +140,16 @@ class Question extends Model
         return $defaults[$this->type] ?? [];
     }
 
+    public function getFormattedOptionsAttribute(): array
+    {
+        return array_map(function ($option) {
+            return [
+                'text' => strval($option['text'] ?? ''),
+                'value' => strval($option['value'] ?? ''),
+            ];
+        }, $this->options ?? []);
+    }
+
     protected static function boot()
     {
         parent::boot();
