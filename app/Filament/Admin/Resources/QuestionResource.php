@@ -94,7 +94,7 @@ class QuestionResource extends Resource
 
                                 // بخش گزینه‌ها و تنظیمات نوع سوال
                                 Forms\Components\Section::make('گزینه‌ها و تنظیمات')
-                                    ->description('گزینه‌های سوال و تنظیمات خا�� هر نوع سوال')
+                                    ->description('گزینه‌های سوال و تنظیمات خاص هر نوع سوال')
                                     ->icon('heroicon-o-list-bullet')
                                     ->collapsible()
                                     ->collapsed(fn (Get $get): bool => !in_array($get('type'), ['multiple_choice', 'single_choice', 'true_false']))
@@ -162,14 +162,16 @@ class QuestionResource extends Resource
                                                     ->label('راهنمای سوال')
                                                     ->placeholder('راهنمایی‌هایی که به کاربر کمک می‌کند')
                                                     ->rows(3)
-                                                    ->columnSpan(1),
+                                                    ->columnSpan(1)
+                                                    ->columnSpanFull(),
 
                                                 TiptapEditor::make('explanation')
                                                     ->label('توضیح پاسخ')
                                                     ->placeholder('توضیح پاسخ صحیح یا نحوه ارزیابی')
                                                     ->extraInputAttributes(['style' => 'min-height: 8rem;'])
                                                     ->output(TiptapOutput::Html)
-                                                    ->columnSpan(1),
+                                                    ->columnSpan(1)
+                                                    ->columnSpanFull(),
                                             ]),
                                     ]),
 
@@ -335,23 +337,13 @@ class QuestionResource extends Resource
                     ->label('نوع سوال')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'چند گزینه‌ای چند جوابی' => 'success',
-                        'چند گزینه‌ای تک جوابی' => 'info',
-                        'صحیح/غلط' => 'warning',
                         'متنی' => 'gray',
-                        'عددی' => 'purple',
                         'آپلود فایل' => 'orange',
-                        'تاریخ' => 'pink',
                         default => 'secondary',
                     })
                     ->icon(fn (string $state): string => match ($state) {
-                        'چند گزینه‌ای چند جوابی' => 'heroicon-m-check-badge',
-                        'چند گزینه‌ای تک جوابی' => 'heroicon-m-radio-button',
-                        'صحیح/غلط' => 'heroicon-m-scale',
                         'متنی' => 'heroicon-m-document-text',
-                        'عددی' => 'heroicon-m-calculator',
                         'آپلود فایل' => 'heroicon-m-arrow-up-tray',
-                        'تاریخ' => 'heroicon-m-calendar-days',
                         default => 'heroicon-m-question-mark-circle',
                     }),
 
@@ -366,7 +358,7 @@ class QuestionResource extends Resource
                     ),
 
                 Tables\Columns\IconColumn::make('is_required')
-                    ->label('اج��اری')
+                    ->label('اجباری')
                     ->boolean()
                     ->trueIcon('heroicon-o-exclamation-triangle')
                     ->falseIcon('heroicon-o-minus-circle')

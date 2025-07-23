@@ -83,23 +83,13 @@ class ViewQuestion extends ViewRecord
                                     ->label('نوع سوال')
                                     ->badge()
                                     ->color(fn (string $state): string => match ($state) {
-                                        'چند گزینه‌ای چند جوابی' => 'success',
-                                        'چند گزینه‌ای تک جوابی' => 'info',
-                                        'صحیح/غلط' => 'warning',
                                         'متنی' => 'gray',
-                                        'عددی' => 'purple',
                                         'آپلود فایل' => 'orange',
-                                        'تاریخ' => 'pink',
                                         default => 'secondary',
                                     })
                                     ->icon(fn (string $state): string => match ($state) {
-                                        'چند گزینه‌ای چند جوابی' => 'heroicon-m-check-badge',
-                                        'چند گزینه‌ای تک جوابی' => 'heroicon-m-radio-button',
-                                        'صحیح/غلط' => 'heroicon-m-scale',
                                         'متنی' => 'heroicon-m-document-text',
-                                        'عددی' => 'heroicon-m-calculator',
                                         'آپلود فایل' => 'heroicon-m-arrow-up-tray',
-                                        'تاریخ' => 'heroicon-m-calendar-days',
                                         default => 'heroicon-m-question-mark-circle',
                                     }),
                             ]),
@@ -226,14 +216,6 @@ class ViewQuestion extends ViewRecord
                                     ->color('secondary')
                                     ->suffix('ام'),
 
-                                Components\TextEntry::make('options_count')
-                                    ->label('تعداد گزینه‌ها')
-                                    ->badge()
-                                    ->color('info')
-                                    ->getStateUsing(fn ($record) =>
-                                    $record->options && is_array($record->options) ?
-                                        count($record->options) . ' گزینه' : 'بدون گزینه'
-                                    ),
                             ]),
                     ]),
 
