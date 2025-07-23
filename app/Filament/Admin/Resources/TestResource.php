@@ -2,7 +2,8 @@
 
 namespace App\Filament\Admin\Resources;
 
-use App\Filament\Admin\Resources\TestCategoryResource\Pages;
+use App\Filament\Admin\Resources\TestResource\Pages;
+use App\Models\Test;
 use App\Models\TestCategory;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -17,16 +18,16 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Filament\Forms\Set;
 
-class TestCategoryResource extends Resource
+class TestResource extends Resource
 {
-    protected static ?string $model = TestCategory::class;
+    protected static ?string $model = Test::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
-    protected static ?string $navigationLabel = 'دسته‌بندی آزمون‌ها';
-    protected static ?string $pluralLabel = 'دسته‌بندی آزمون‌ها';
-    protected static ?string $label = 'دسته‌بندی آزمون';
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static ?string $navigationLabel = 'آزمون‌ها';
+    protected static ?string $pluralLabel = 'آزمون‌ها';
+    protected static ?string $label = 'آزمون';
     protected static ?string $navigationGroup = 'مدیریت آزمون‌ها';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {
@@ -40,8 +41,35 @@ class TestCategoryResource extends Resource
                                     ->schema([
                                         Forms\Components\Grid::make(2)
                                             ->schema([
+                                                Forms\Components\Select::make('test_category_id')
+                                                    ->label('دسته‌بندی')
+                                                    ->relationship('category', 'title')
+                                                    ->searchable()
+                                                    ->preload()
+                                                    ->required()
+                                                    ->createOptionForm([
+                                                        Forms\Components\TextInput::make('title')
+                                                            ->label('عنوان')
+                                                            ->required(),
+                                                        Forms\Components\TextInput::make('slug')
+                                                            ->label('اسلاگ')
+                                                            ->required(),
+                                                    ]),
+                                                Forms\Components\Select::make('status')
+                                                    ->label('وضعیت')
+                                                    ->options([
+                                                        'Draft' => 'پیش‌نویس',
+                                                        'Published' => 'منتشر شده',
+                                                        'Archived' => 'بایگانی شده',
+                                                    ])
+                                                    ->default('Draft')
+                                                    ->required()
+                                                    ->native(false),
+                                            ]),
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
                                                 Forms\Components\TextInput::make('title')
-                                                    ->label('عنوان')
+                                                    ->label('عنوان آزمون')
                                                     ->required()
                                                     ->maxLength(255)
                                                     ->live(onBlur: true)
@@ -49,46 +77,116 @@ class TestCategoryResource extends Resource
                                                 Forms\Components\TextInput::make('slug')
                                                     ->label('اسلاگ')
                                                     ->required()
-                                                    ->unique(TestCategory::class, 'slug', ignoreRecord: true)
+                                                    ->unique(Test::class, 'slug', ignoreRecord: true)
                                                     ->maxLength(255)
                                                     ->rules(['regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'])
                                                     ->helperText('فقط حروف انگلیسی کوچک، اعداد و خط تیره مجاز است'),
-                                            ]),
-                                        Forms\Components\Grid::make(2)
-                                            ->schema([
-                                                Forms\Components\Toggle::make('is_active')
-                                                    ->label('فعال')
-                                                    ->inline(false)
-                                                    ->default(true),
-                                                Forms\Components\TextInput::make('sort_order')
-                                                    ->label('ترتیب نمایش')
-                                                    ->numeric()
-                                                    ->default(0)
-                                                    ->helperText('عدد کمتر اولویت بالاتر دارد'),
                                             ]),
                                         TiptapEditor::make('description')
                                             ->label('توضیحات (کامل)')
                                             ->extraInputAttributes(['style' => 'min-height: 32rem;'])
                                             ->output(TiptapOutput::Html)
+                                            ->required()
                                             ->columnSpanFull(),
+                                    ]),
+
+                                Forms\Components\Section::make('تنظیمات قیمت و زمان')
+                                    ->schema([
+                                        Forms\Components\Grid::make(3)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('price')
+                                                    ->label('قیمت (تومان)')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->prefix('💰')
+                                                    ->minValue(0)
+                                                    ->step(1000),
+                                                Forms\Components\TextInput::make('sale')
+                                                    ->label('مقدار تخفیف (تومان)')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->prefix('🏷️')
+                                                    ->minValue(0)
+                                                    ->step(1000),
+                                                Forms\Components\TextInput::make('required_minutes')
+                                                    ->label('زمان مورد نیاز (دقیقه)')
+                                                    ->numeric()
+                                                    ->default(30)
+                                                    ->minValue(1)
+                                                    ->suffix('دقیقه')
+                                                    ->helperText('زمان تقریبی برای تکمیل آزمون'),
+                                            ]),
+                                    ]),
+
+                                Forms\Components\Section::make('محدودیت‌های سنی')
+                                    ->schema([
+                                        Forms\Components\Grid::make(2)
+                                            ->schema([
+                                                Forms\Components\TextInput::make('min_age')
+                                                    ->label('حداقل سن')
+                                                    ->numeric()
+                                                    ->default(0)
+                                                    ->minValue(0)
+                                                    ->maxValue(100)
+                                                    ->suffix('سال'),
+                                                Forms\Components\TextInput::make('max_age')
+                                                    ->label('حداکثر سن')
+                                                    ->numeric()
+                                                    ->default(100)
+                                                    ->minValue(0)
+                                                    ->maxValue(120)
+                                                    ->suffix('سال'),
+                                            ]),
                                     ]),
                             ])
                             ->columnSpan(4),
 
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\Section::make('تصویر دسته‌بندی')
+                                Forms\Components\Section::make('تصویر آزمون')
                                     ->schema([
                                         Forms\Components\FileUpload::make('image')
                                             ->label('تصویر شاخص')
                                             ->optimize('webp')
-                                            ->directory('test_categories')
+                                            ->directory('tests')
                                             ->uploadingMessage('در حال آپلود...')
                                             ->image()
                                             ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg', 'image/svg+xml'])
                                             ->maxSize(16384)
                                             ->imageEditorAspectRatios(['16:9', '4:3', '1:1'])
                                             ->helperText('حداکثر سایز: 16 مگابایت'),
+                                    ]),
+
+                                Forms\Components\Section::make('تنظیمات پیشرفته')
+                                    ->schema([
+                                        Forms\Components\Toggle::make('is_need_family')
+                                            ->label('نیاز به اطلاعات خانواده')
+                                            ->helperText('آیا برای این آزمون اطلاعات خانواده لازم است؟')
+                                            ->inline(false),
+                                        Forms\Components\Toggle::make('is_active')
+                                            ->label('فعال')
+                                            ->default(true)
+                                            ->inline(false),
+                                        Forms\Components\TextInput::make('sort_order')
+                                            ->label('ترتیب نمایش')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->helperText('عدد کمتر اولویت بالاتر دارد'),
+                                        Forms\Components\TextInput::make('type')
+                                            ->label('نوع آزمون')
+                                            ->maxLength(255)
+                                            ->placeholder('مثال: شخصیت‌شناسی، هوش، ...')
+                                            ->helperText('دسته‌بندی نوع آزمون'),
+                                        Forms\Components\TextInput::make('catalog')
+                                            ->label('کاتالوگ')
+                                            ->maxLength(255)
+                                            ->placeholder('کد یا شناسه کاتالوگ')
+                                            ->helperText('شناسه یا کد کاتالوگ آزمون'),
+                                        Forms\Components\Textarea::make('admin_note')
+                                            ->label('یادداشت مدیر')
+                                            ->rows(3)
+                                            ->placeholder('یادداشت‌های داخلی برای مدیران...')
+                                            ->helperText('این یادداشت فقط برای مدیران قابل مشاهده است'),
                                     ]),
 
                                 Forms\Components\Section::make('اطلاعات متا و سئو')
@@ -230,26 +328,54 @@ class TestCategoryResource extends Resource
                     ->label('عنوان')
                     ->searchable()
                     ->sortable()
-                    ->weight('bold'),
-                Tables\Columns\TextColumn::make('slug')
-                    ->label('اسلاگ')
-                    ->searchable()
-                    ->fontFamily('mono')
-                    ->color('gray'),
-                Tables\Columns\TextColumn::make('tests_count')
-                    ->label('تعداد آزمون‌ها')
-                    ->counts('tests')
+                    ->weight('bold')
+                    ->limit(30),
+                Tables\Columns\TextColumn::make('category.title')
+                    ->label('دسته‌بندی')
                     ->sortable()
-                    ->alignCenter()
                     ->badge()
                     ->color('primary'),
-                Tables\Columns\TextColumn::make('active_tests_count')
-                    ->label('آزمون‌های فعال')
-                    ->counts('activeTests')
-                    ->sortable()
-                    ->alignCenter()
+                Tables\Columns\TextColumn::make('status')
+                    ->label('وضعیت')
                     ->badge()
-                    ->color('success'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'Draft' => 'warning',
+                        'Published' => 'success',
+                        'Archived' => 'danger',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'Draft' => 'پیش‌نویس',
+                        'Published' => 'منتشر شده',
+                        'Archived' => 'بایگانی شده',
+                    }),
+                Tables\Columns\TextColumn::make('price')
+                    ->label('قیمت')
+                    ->money('IRT')
+                    ->sortable()
+                    ->alignEnd(),
+                Tables\Columns\TextColumn::make('final_price')
+                    ->label('قیمت نهایی')
+                    ->getStateUsing(fn (Test $record): int => $record->final_price)
+                    ->money('IRT')
+                    ->sortable()
+                    ->alignEnd()
+                    ->color(fn (Test $record): string => $record->is_free ? 'success' : 'primary'),
+                Tables\Columns\TextColumn::make('required_minutes')
+                    ->label('زمان')
+                    ->formatStateUsing(fn (Test $record): string => $record->required_time)
+                    ->sortable()
+                    ->alignCenter(),
+                Tables\Columns\TextColumn::make('age_range')
+                    ->label('رده سنی')
+                    ->getStateUsing(fn (Test $record): string => $record->age_range)
+                    ->alignCenter(),
+                Tables\Columns\IconColumn::make('is_need_family')
+                    ->label('نیاز خانواده')
+                    ->boolean()
+                    ->trueIcon('heroicon-o-users')
+                    ->falseIcon('heroicon-o-user')
+                    ->trueColor('info')
+                    ->falseColor('gray'),
                 Tables\Columns\TextColumn::make('sort_order')
                     ->label('ترتیب')
                     ->sortable()
@@ -261,57 +387,100 @@ class TestCategoryResource extends Resource
                     ->falseIcon('heroicon-o-x-circle')
                     ->trueColor('success')
                     ->falseColor('danger'),
+                Tables\Columns\TextColumn::make('type')
+                    ->label('نوع')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('تاریخ ایجاد')
                     ->dateTime('Y/m/d H:i')
                     ->jalaliDate()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->label('آخرین ویرایش')
-                    ->dateTime('Y/m/d H:i')
-                    ->jalaliDate()
+                Tables\Columns\TextColumn::make('questions_count')
+                    ->label('تعداد سوال')
+                    ->counts('questions')
                     ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->alignCenter()
+                    ->badge()
+                    ->color('info'),
+                Tables\Columns\TextColumn::make('active_questions_count')
+                    ->label('سوالات فعال')
+                    ->counts('activeQuestions')
+                    ->sortable()
+                    ->alignCenter()
+                    ->badge()
+                    ->color('success'),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('is_active')
+                Tables\Filters\SelectFilter::make('test_category_id')
+                    ->label('دسته‌بندی')
+                    ->relationship('category', 'title')
+                    ->searchable()
+                    ->preload(),
+
+                Tables\Filters\SelectFilter::make('status')
                     ->label('وضعیت')
+                    ->options([
+                        'Draft' => 'پیش‌نویس',
+                        'Published' => 'منتشر شده',
+                        'Archived' => 'بایگانی شده',
+                    ])
+                    ->native(false),
+
+                Tables\Filters\TernaryFilter::make('is_active')
+                    ->label('فعال/غیرفعال')
                     ->trueLabel('فعال')
                     ->falseLabel('غیرفعال')
                     ->native(false),
 
-                Tables\Filters\Filter::make('has_tests')
-                    ->label('دارای آزمون')
-                    ->query(fn (Builder $query): Builder => $query->has('tests'))
-                    ->toggle(),
+                Tables\Filters\TernaryFilter::make('is_need_family')
+                    ->label('نیاز به خانواده')
+                    ->trueLabel('نیاز دارد')
+                    ->falseLabel('نیاز ندارد')
+                    ->native(false),
 
-                Tables\Filters\Filter::make('tests_count')
-                    ->label('تعداد آزمون‌ها')
+                Tables\Filters\Filter::make('price_range')
+                    ->label('محدوده قیمت')
                     ->form([
                         Forms\Components\Grid::make(2)
                             ->schema([
-                                Forms\Components\TextInput::make('tests_from')
+                                Forms\Components\TextInput::make('price_from')
                                     ->label('از')
                                     ->numeric()
-                                    ->placeholder('مثال: 1'),
-                                Forms\Components\TextInput::make('tests_to')
+                                    ->placeholder('0'),
+                                Forms\Components\TextInput::make('price_to')
                                     ->label('تا')
                                     ->numeric()
-                                    ->placeholder('مثال: 10'),
+                                    ->placeholder('1000000'),
                             ]),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
                             ->when(
-                                $data['tests_from'],
-                                fn (Builder $query, $value): Builder => $query->withCount('tests')->having('tests_count', '>=', $value),
+                                $data['price_from'],
+                                fn (Builder $query, $value): Builder => $query->where('price', '>=', $value),
                             )
                             ->when(
-                                $data['tests_to'],
-                                fn (Builder $query, $value): Builder => $query->withCount('tests')->having('tests_count', '<=', $value),
+                                $data['price_to'],
+                                fn (Builder $query, $value): Builder => $query->where('price', '<=', $value),
                             );
                     }),
+
+                Tables\Filters\Filter::make('free_tests')
+                    ->label('آزمون‌های رایگان')
+                    ->query(fn (Builder $query): Builder => $query->where('price', 0))
+                    ->toggle(),
+
+                Tables\Filters\SelectFilter::make('type')
+                    ->label('نوع آزمون')
+                    ->options(function () {
+                        return Test::whereNotNull('type')
+                            ->distinct()
+                            ->pluck('type', 'type')
+                            ->toArray();
+                    })
+                    ->searchable(),
 
                 Tables\Filters\TrashedFilter::make()
                     ->label('وضعیت حذف'),
@@ -325,19 +494,20 @@ class TestCategoryResource extends Resource
                         ->label('ویرایش')
                         ->icon('heroicon-o-pencil'),
                     Tables\Actions\Action::make('toggle_status')
-                        ->label(fn (TestCategory $record) => $record->is_active ? 'غیرفعال کردن' : 'فعال کردن')
-                        ->icon(fn (TestCategory $record) => $record->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
-                        ->color(fn (TestCategory $record) => $record->is_active ? 'warning' : 'success')
-                        ->action(fn (TestCategory $record) => $record->update(['is_active' => !$record->is_active]))
+                        ->label(fn (Test $record) => $record->is_active ? 'غیرفعال کردن' : 'فعال کردن')
+                        ->icon(fn (Test $record) => $record->is_active ? 'heroicon-o-eye-slash' : 'heroicon-o-eye')
+                        ->color(fn (Test $record) => $record->is_active ? 'warning' : 'success')
+                        ->action(fn (Test $record) => $record->update(['is_active' => !$record->is_active]))
                         ->requiresConfirmation(),
                     Tables\Actions\Action::make('duplicate')
                         ->label('کپی')
                         ->icon('heroicon-o-document-duplicate')
                         ->color('info')
-                        ->action(function (TestCategory $record) {
+                        ->action(function (Test $record) {
                             $newRecord = $record->replicate();
                             $newRecord->title = $record->title . ' (کپی)';
                             $newRecord->slug = $record->slug . '-copy-' . time();
+                            $newRecord->status = 'Draft';
                             $newRecord->save();
                         })
                         ->requiresConfirmation(),
@@ -373,6 +543,20 @@ class TestCategoryResource extends Resource
                         ->action(fn ($records) => $records->each->update(['is_active' => false]))
                         ->requiresConfirmation()
                         ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('publish')
+                        ->label('انتشار')
+                        ->icon('heroicon-o-globe-alt')
+                        ->color('success')
+                        ->action(fn ($records) => $records->each->update(['status' => 'Published']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('archive')
+                        ->label('بایگانی')
+                        ->icon('heroicon-o-archive-box')
+                        ->color('warning')
+                        ->action(fn ($records) => $records->each->update(['status' => 'Archived']))
+                        ->requiresConfirmation()
+                        ->deselectRecordsAfterCompletion(),
                     Tables\Actions\DeleteBulkAction::make()
                         ->label('حذف گروهی'),
                     Tables\Actions\RestoreBulkAction::make()
@@ -406,10 +590,10 @@ class TestCategoryResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTestCategories::route('/'),
-            'create' => Pages\CreateTestCategory::route('/create'),
-            'edit' => Pages\EditTestCategory::route('/{record}/edit'),
-            'view' => Pages\ViewTestCategory::route('/{record}'),
+            'index' => Pages\ListTests::route('/'),
+            'create' => Pages\CreateTest::route('/create'),
+            'edit' => Pages\EditTest::route('/{record}/edit'),
+            'view' => Pages\ViewTest::route('/{record}'),
         ];
     }
 
@@ -420,24 +604,28 @@ class TestCategoryResource extends Resource
 
     public static function getNavigationBadgeColor(): string|array|null
     {
-        return 'primary';
+        return 'success';
     }
 
     public static function getGlobalSearchEloquentQuery(): Builder
     {
-        return parent::getGlobalSearchEloquentQuery();
+        return parent::getGlobalSearchEloquentQuery()->with(['category']);
     }
 
     public static function getGloballySearchableAttributes(): array
     {
-        return ['title', 'description'];
+        return ['title', 'description', 'category.title'];
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {
         return [
-            'آزمون‌ها' => $record->tests_count . ' آزمون',
-            'وضعیت' => $record->is_active ? 'فعال' : 'غیرفعال',
+            'دسته‌بندی' => $record->category?->title,
+            'وضعیت' => match($record->status) {
+                'Draft' => 'پیش‌نویس',
+                'Published' => 'منتشر شده',
+                'Archived' => 'بایگانی شده',
+            },
         ];
     }
 }
