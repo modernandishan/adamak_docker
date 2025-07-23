@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\TestResource\Pages;
 use App\Models\Test;
 use App\Models\TestCategory;
 use Filament\Forms;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -17,6 +18,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Filament\Forms\Set;
+use Pelmered\FilamentMoneyField\Tables\Columns\MoneyColumn;
 
 class TestResource extends Resource
 {
@@ -95,14 +97,14 @@ class TestResource extends Resource
                                         Forms\Components\Grid::make(3)
                                             ->schema([
                                                 Forms\Components\TextInput::make('price')
-                                                    ->label('قیمت (تومان)')
+                                                    ->label('قیمت (ریال)')
                                                     ->numeric()
                                                     ->default(0)
                                                     ->prefix('💰')
                                                     ->minValue(0)
                                                     ->step(1000),
                                                 Forms\Components\TextInput::make('sale')
-                                                    ->label('مقدار تخفیف (تومان)')
+                                                    ->label('قیمت با تخفیف (ریال)')
                                                     ->numeric()
                                                     ->default(0)
                                                     ->prefix('🏷️')
@@ -177,11 +179,14 @@ class TestResource extends Resource
                                             ->maxLength(255)
                                             ->placeholder('مثال: شخصیت‌شناسی، هوش، ...')
                                             ->helperText('دسته‌بندی نوع آزمون'),
-                                        Forms\Components\TextInput::make('catalog')
+                                        /*Forms\Components\TextInput::make('catalog')
                                             ->label('کاتالوگ')
                                             ->maxLength(255)
                                             ->placeholder('کد یا شناسه کاتالوگ')
-                                            ->helperText('شناسه یا کد کاتالوگ آزمون'),
+                                            ->helperText('شناسه یا کد کاتالوگ آزمون'),*/
+                                        FileUpload::make('catalog')
+                                            ->label('کاتالوگ')
+                                            ->directory('test-catalog'),
                                         Forms\Components\Textarea::make('admin_note')
                                             ->label('یادداشت مدیر')
                                             ->rows(3)
@@ -348,15 +353,15 @@ class TestResource extends Resource
                         'Published' => 'منتشر شده',
                         'Archived' => 'بایگانی شده',
                     }),
-                Tables\Columns\TextColumn::make('price')
+                MoneyColumn::make('price')
                     ->label('قیمت')
-                    ->money('IRT')
+                    ->money('IRR')
                     ->sortable()
                     ->alignEnd(),
-                Tables\Columns\TextColumn::make('final_price')
+                MoneyColumn::make('sale')
                     ->label('قیمت نهایی')
-                    ->getStateUsing(fn (Test $record): int => $record->final_price)
-                    ->money('IRT')
+                    //->getStateUsing(fn (Test $record): int => $record->final_price)
+                    ->money('IRR')
                     ->sortable()
                     ->alignEnd()
                     ->color(fn (Test $record): string => $record->is_free ? 'success' : 'primary'),
