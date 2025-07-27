@@ -30,6 +30,8 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
+            //->topNavigation()
+            ->unsavedChangesAlerts()
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
@@ -67,6 +69,11 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 FilamentShieldPlugin::make(),
                 FilamentCaptcha::make()
+            ])
+            //->spa()
+            ->spaUrlExceptions(fn (): array => [
+                /*url('/admin'),
+                PostResource::getUrl(),*/
             ])
             ->authMiddleware([
                 Authenticate::class,

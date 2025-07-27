@@ -17,7 +17,8 @@
         "livewire/livewire": "^3.6",
         "marcogermani87/filament-captcha": "^1.5",
         "mokhosh/filament-jalali": "^4.10",
-        "pelmered/filament-money-field": "^1.5"
+        "pelmered/filament-money-field": "^1.5",
+        "shetabit/multipay": "^2.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
