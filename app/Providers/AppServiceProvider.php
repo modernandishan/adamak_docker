@@ -2,10 +2,13 @@
 
 namespace App\Providers;
 
+use App\Filament\Pages\EditProfile;
 use App\Models\User;
 use App\Observers\UserObserver;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Infolists\Infolist;
+use Filament\Navigation\NavigationGroup;
+use Filament\Navigation\NavigationItem;
 use Filament\Tables\Table;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Validator;
