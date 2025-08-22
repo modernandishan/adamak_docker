@@ -1,15 +1,15 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FormSubmissionController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\PostCategoryController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ProfileController;
 
 Route::get('/', [LandingController::class, 'home'])->name('home');
 Route::view('/contact', '')->name('contact');
@@ -19,7 +19,7 @@ Route::prefix('blog')->name('blog')->group(function () {
     Route::get('/archive/{year}/{month}', [LandingController::class, 'blogArchive'])->name('.archive');
     Route::get('/{slug}', [LandingController::class, 'blogDetail'])->name('.detail');
     Route::get('/category/{slug}', [PostCategoryController::class, 'show'])->name('.category.show');
-    //Route::post('/{slug}/comment', [LandingController::class, 'storeComment'])->name('.comment.store');
+    // Route::post('/{slug}/comment', [LandingController::class, 'storeComment'])->name('.comment.store');
 });
 Route::get('/wallet/callback', [WalletController::class, 'callback'])->name('wallet.callback');
 Route::post('/send-to-gateway', [WalletController::class, 'SendToGateway'])->name('send.to.gateway');
@@ -31,12 +31,7 @@ Route::prefix('tests')->name('tests.')->group(function () {
     Route::get('/category/{slug}', [LandingController::class, 'testCategoryShow'])->name('category.show');
 });
 
-//Route::get('/tests/purchase/{slug}', [PaymentController::class, 'purchaseTest'])->name('tests.purchase');
-Route::get('/rrr', function () {
-    Schema::dropIfExists('answers');
-    Schema::dropIfExists('attempts');
-});
-
+// Route::get('/tests/purchase/{slug}', [PaymentController::class, 'purchaseTest'])->name('tests.purchase');
 
 Route::middleware('auth:sanctum')->prefix('user')->name('user.')->group(function () {
 
@@ -82,8 +77,7 @@ Route::controller(AuthController::class)
         Route::get('/reset-password', 'resetPassword')->name('reset-password');
     });
 
-
-//redirects
+// redirects
 Route::get('/login', function () {
     return redirect()->route('user.login');
 })->name('login');

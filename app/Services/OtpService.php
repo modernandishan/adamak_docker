@@ -4,9 +4,9 @@ namespace App\Services;
 
 use App\Models\OtpCode;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use IPPanel\Client;
-use Exception;
 
 class OtpService
 {
@@ -14,25 +14,25 @@ class OtpService
 
     public function __construct()
     {
-        $this->smsClient = new Client(env('IPPANEL_API_KEY'));
+        $this->smsClient = new Client(config('otp.api_key'));
     }
 
     public function sendOtp(string $mobile, string $pattern, bool $force = false): array
     {
-        if (!$force) {
+        if (! $force) {
             $existingCode = $this->getValidOtp($mobile);
 
             if ($existingCode) {
                 return [
                     'code' => $existingCode,
-                    'is_new' => false
+                    'is_new' => false,
                 ];
             }
         }
 
         OtpCode::where('mobile', $mobile)->delete();
 
-        $digits = (int) env('IPPANEL_OTP_DIGITS', 4);
+        $digits = (int) config('otp.digits', 4);
         $min = pow(10, $digits - 1);
         $max = pow(10, $digits) - 1;
         $code = (string) rand($min, $max);
@@ -47,12 +47,12 @@ class OtpService
             $formattedMobile = $this->formatMobileNumber($mobile);
 
             $patternValues = [
-                "code" => $code,
+                'code' => $code,
             ];
 
             $bulkId = $this->smsClient->sendPattern(
-                env($pattern),
-                env('IPPANEL_ORIGIN_NUMBER'),
+                config('otp.patterns.'.str_replace('IPPANEL_', '', strtolower($pattern)).'_PATTERN'),
+                config('otp.origin_number'),
                 $formattedMobile,
                 $patternValues
             );
@@ -60,10 +60,10 @@ class OtpService
             Log::info("SMS sent to $mobile with pattern. Bulk ID: $bulkId, Code: $code");
 
         } catch (Exception $e) {
-            Log::error("Failed to send OTP to $mobile: " . $e->getMessage());
+            Log::error("Failed to send OTP to $mobile: ".$e->getMessage());
             // In development, we can ignore the error and proceed
-            if (env('APP_ENV') !== 'production') {
-                Log::warning("Development mode: Ignoring SMS error and returning code anyway");
+            if (config('app.env') !== 'production') {
+                Log::warning('Development mode: Ignoring SMS error and returning code anyway');
             } else {
                 throw $e; // Rethrow exception in production
             }
@@ -71,7 +71,7 @@ class OtpService
 
         return [
             'code' => $code,
-            'is_new' => true
+            'is_new' => true,
         ];
     }
 
@@ -114,7 +114,7 @@ class OtpService
     private function formatMobileNumber(string $mobile): string
     {
         if (str_starts_with($mobile, '09')) {
-            return '98' . substr($mobile, 1);
+            return '98'.substr($mobile, 1);
         }
 
         return $mobile;
