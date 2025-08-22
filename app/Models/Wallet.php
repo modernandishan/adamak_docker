@@ -49,6 +49,7 @@ class Wallet extends Model
             'type' => 'purchase',
             'description' => $description,
             'status' => 'completed',
+            'transaction_id' => 'INTRN_' . now()->format('YmdHis') . uniqid(), // افزودن شناسه منحصربفرد
         ]);
     }
 }

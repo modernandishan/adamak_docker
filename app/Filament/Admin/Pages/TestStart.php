@@ -15,13 +15,11 @@ class TestStart extends Page
     protected static ?int $navigationSort = 2;
     protected static ?string $slug = 'test-start/{id}';
     protected static bool $shouldRegisterNavigation = false;
-    public Test $record;
+    public Test $test;
 
     public function mount(int $id): void
     {
-        $this->record = Test::findOrFail($id);
+        $this->test = Test::findOrFail($id);
     }
-
-
 
 }

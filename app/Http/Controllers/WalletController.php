@@ -2,26 +2,39 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Shetabit\Multipay\Payment;
 use Shetabit\Multipay\Exceptions\InvalidPaymentException;
 use Shetabit\Multipay\Invoice;
-use Filament\Notifications\Notification;
 
 class WalletController extends Controller
 {
-    public function SendToGateway(Request $request)
+    public function showChargeForm()
+    {
+        $user = Auth::user();
+        $wallet = $user->wallet()->firstOrCreate(['user_id' => $user->id], ['balance' => 0]);
+
+        // دریافت تراکنش‌های کیف پول کاربر با مرتب سازی از جدید به قدیم
+        $transactions = $wallet->transactions()
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('wallet-charge', compact('wallet', 'transactions'));
+    }
+
+    // ارسال درخواست به درگاه پرداخت
+    public function sendToGateway(Request $request)
     {
         $request->validate([
-            'amount' => 'required|numeric|min:1000',
+            'amount' => 'required|numeric|min:100000',
         ]);
 
         $amount = (int) $request->input('amount');
 
         $payment = new Payment(config('payment'));
-
         $invoice = (new Invoice)->amount($amount);
 
         return $payment
@@ -32,6 +45,7 @@ class WalletController extends Controller
                     ['user_id' => $user->id],
                     ['balance' => 0]
                 );
+
                 $wallet->transactions()->create([
                     'transaction_id' => $transactionId,
                     'amount' => $amount,
@@ -42,17 +56,9 @@ class WalletController extends Controller
             })
             ->pay()
             ->render();
-
-
-        $redirectForm = $purchase->pay();
-
-        $actionUrl = $redirectForm->getAction();
-
-        return redirect()->away($actionUrl);
     }
 
-
-
+    // پردازش بازگشت از درگاه پرداخت
     public function callback(Request $request)
     {
         $status = $request->input('Status');
@@ -64,34 +70,25 @@ class WalletController extends Controller
 
         $transaction = WalletTransaction::where('transaction_id', $authority)
             ->where('status', 'pending')
-            ->first();
-
-        if (!$transaction) {
-            abort(404, 'تراکنش مورد نظر یافت نشد.');
-        }
+            ->firstOrFail();
 
         if ($status !== 'OK') {
-            // کاربر پرداخت را لغو کرده یا خطایی رخ داده
             $transaction->update([
                 'status' => 'failed',
                 'description' => 'پرداخت توسط کاربر لغو شد یا تایید نشد.',
             ]);
 
-            session()->flash('filament.notifications', [
-                [
-                    'title' => 'پرداخت لغو شد',
-                    'body' => 'شما پرداخت را لغو کردید یا عملیات ناموفق بود.',
-                    'status' => 'danger',
-                ]
+            return redirect()->route('user.wallet.charge.form')->withErrors([
+                'payment' => 'پرداخت توسط شما لغو شد.'
             ]);
-
-            return redirect('/admin/wallet-charge');
         }
 
         $payment = new Payment(config('payment'));
 
         try {
-            $receipt = $payment->amount($transaction->amount)->transactionId($authority)->verify();
+            $receipt = $payment->amount($transaction->amount)
+                ->transactionId($authority)
+                ->verify();
 
             $transaction->update([
                 'status' => 'completed',
@@ -102,12 +99,8 @@ class WalletController extends Controller
             $wallet = $transaction->wallet;
             $wallet->increment('balance', $transaction->amount);
 
-            session()->flash('filament.notifications', [
-                [
-                    'title' => 'پرداخت موفق',
-                    'body' => 'پرداخت شما با موفقیت انجام شد و کیف پول شارژ گردید.',
-                    'status' => 'success',
-                ]
+            return redirect()->route('user.wallet.charge.form')->with([
+                'success' => 'کیف پول شما با موفقیت شارژ شد. مبلغ: ' . number_format($transaction->amount) . ' ریال'
             ]);
 
         } catch (InvalidPaymentException $e) {
@@ -116,17 +109,9 @@ class WalletController extends Controller
                 'description' => 'خطا در پرداخت: ' . $e->getMessage(),
             ]);
 
-            session()->flash('filament.notifications', [
-                [
-                    'title' => 'پرداخت ناموفق',
-                    'body' => 'پرداخت انجام نشد. لطفاً مجدد تلاش کنید.',
-                    'status' => 'danger',
-                ]
+            return redirect()->route('user.wallet.charge.form')->withErrors([
+                'payment' => 'خطا در پرداخت: ' . $e->getMessage()
             ]);
         }
-
-        return redirect('/admin/wallet-charge');
     }
-
-
 }

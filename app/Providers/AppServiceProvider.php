@@ -2,46 +2,39 @@
 
 namespace App\Providers;
 
-use App\Filament\Pages\EditProfile;
+use App\Models\Setting;
 use App\Models\User;
 use App\Observers\UserObserver;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Infolists\Infolist;
-use Filament\Navigation\NavigationGroup;
-use Filament\Navigation\NavigationItem;
-use Filament\Tables\Table;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Validator;
+use Filament\Tables\Table;
+use Illuminate\Pagination\Paginator;
+
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
+
     public function register(): void
     {
-        //
+
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        Table::$defaultDateDisplayFormat = 'Y-m-d';
-        Table::$defaultDateTimeDisplayFormat = 'Y-m-d H:i:s';
-
-        Infolist::$defaultDateDisplayFormat = 'Y-m-d';
-        Infolist::$defaultDateTimeDisplayFormat = 'Y-m-d H:i:s';
-
-        DateTimePicker::$defaultDateDisplayFormat = 'Y-m-d';
-        DateTimePicker::$defaultDateTimeDisplayFormat = 'Y-m-d H:i';
-        DateTimePicker::$defaultDateTimeWithSecondsDisplayFormat = 'Y-m-d H:i:s';
-
         User::observe(UserObserver::class);
-        Validator::extend('captcha', function ($attribute, $value, $parameters, $validator) {
-            // در اینجا باید منطق بررسی کپچا را اضافه کنید.
-            // برای نمونه، اگر مقدار کپچا در نشست (session) ذخیره شده باشد:
-            return $value === session('captcha_code');
-        }, 'کد امنیتی صحیح نمی‌باشد.');
+        Paginator::currentPathResolver(function () {
+            return url()->current();
+        });
+        Paginator::currentPageResolver(function ($pageName = 'page') {
+            return request()->input($pageName, 1);
+        });
+        Paginator::useBootstrapFive();
+        Table::$defaultDateDisplayFormat = 'Y-m-d';
+        Table::$defaultDateTimeDisplayFormat = 'Y-m-d (H:i:s)';
+        Infolist::$defaultDateDisplayFormat = 'Y-m-d';
+        Infolist::$defaultDateTimeDisplayFormat = 'Y-m-d (H:i:s)';
+        ResetPassword::createUrlUsing(function (object $notifiable, string $token) {
+            return config('app.frontend_url')."/password-reset/$token?email={$notifiable->getEmailForPasswordReset()}";
+        });
     }
 }

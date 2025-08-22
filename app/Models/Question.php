@@ -27,6 +27,7 @@ class Question extends Model
         'admin_note'
     ];
 
+
     protected $casts = [
         'settings' => 'array',
         'options' => 'array',
@@ -83,9 +84,8 @@ class Question extends Model
         return self::TYPES;
     }
 
-    /**
-     * دریافت نام نوع سوال به فارسی
-     */
+    protected $appends = ['type_name'];
+
     public function getTypeNameAttribute(): string
     {
         return self::TYPES[$this->type] ?? $this->type;

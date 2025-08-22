@@ -17,7 +17,7 @@ class OtpService
         $this->smsClient = new Client(env('IPPANEL_API_KEY'));
     }
 
-    public function sendOtp(string $mobile, bool $force = false): array
+    public function sendOtp(string $mobile, string $pattern, bool $force = false): array
     {
         if (!$force) {
             $existingCode = $this->getValidOtp($mobile);
@@ -51,7 +51,7 @@ class OtpService
             ];
 
             $bulkId = $this->smsClient->sendPattern(
-                env('IPPANEL_REST_PASSWORD_PATTERN'),
+                env($pattern),
                 env('IPPANEL_ORIGIN_NUMBER'),
                 $formattedMobile,
                 $patternValues

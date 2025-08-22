@@ -21,8 +21,8 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->enum('status', ['Draft', 'Published', 'Archived'])->default('Draft')->index();
             $table->boolean('is_need_family')->default(false)->index();
-            $table->integer('price')->default(0);
-            $table->integer('sale')->default(0);
+            $table->integer('price');
+            $table->integer('sale')->nullable();
             $table->integer('required_minutes')->default(0)->index();
             $table->integer('min_age')->default(0)->index();
             $table->integer('max_age')->default(100)->index();
@@ -31,9 +31,7 @@ return new class extends Migration
             $table->string('type')->nullable()->index();
             $table->string('catalog')->nullable()->index();
             $table->integer('sort_order')->default(0)->index();
-            $table->string('meta_title')->nullable();
-            $table->text('meta_description')->nullable();
-            $table->json('meta_keywords')->nullable();
+
 
             $table->softDeletes();
             $table->timestamps();

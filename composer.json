@@ -13,18 +13,22 @@
         "ippanel/php-rest-sdk": "^2.0",
         "joshembling/image-optimizer": "^1.6",
         "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^3.6",
         "marcogermani87/filament-captcha": "^1.5",
         "mokhosh/filament-jalali": "^4.10",
+        "morilog/jalali": "3.*",
         "pelmered/filament-money-field": "^1.5",
         "shetabit/multipay": "^2.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "laravel/boost": "^1.0",
+        "laravel/breeze": "^2.3",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.13",
-        "laravel/sail": "^1.43",
+        "laravel/sail": "^1.44",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "phpunit/phpunit": "^11.5.3"

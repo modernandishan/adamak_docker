@@ -46,6 +46,11 @@ class Test extends Model
         'meta_keywords' => 'array',
     ];
 
+    public function attempts()
+    {
+        return $this->hasMany(Attempt::class);
+    }
+
     protected static function boot()
     {
         parent::boot();
@@ -67,9 +72,16 @@ class Test extends Model
         });
     }
 
-    /**
-     * ارتباط با دسته‌بندی
-     */
+    public function getDescriptionShortAttribute()
+    {
+        return Str::limit(strip_tags($this->description), 100);
+    }
+
+    public function getRequiredMinutesAttribute()
+    {
+        return $this->attributes['required_minutes'];
+    }
+
     public function category()
     {
         return $this->belongsTo(TestCategory::class, 'test_category_id');
@@ -132,17 +144,32 @@ class Test extends Model
         return $query->where('price', '>', 0);
     }
 
-    /**
-     * قیمت نهایی با احتساب تخفیف
-     */
     public function getFinalPriceAttribute()
     {
-        return $this->price - $this->sale;
+        if(($this->price === 0 && $this->sale === null) || ($this->price === 0 && $this->sale === 0)){
+            return 0;
+        }elseif ($this->price !== 0 && $this->sale === 0){
+            return 0;
+        }elseif ($this->price > 0 && $this->sale > 0){
+            return $this->sale;
+        }elseif ($this->price > 0 && $this->sale === null){
+            return $this->price;
+        }
     }
 
-    /**
-     * درصد تخفیف
-     */
+    // در مدل Test
+    public function purchasedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'test_user_purchases')
+            ->using(TestUserPurchase::class)
+            ->withPivot('amount', 'wallet_transaction_id', 'purchased_at');
+    }
+
+    public function answers()
+    {
+        return $this->hasMany(Answer::class);
+    }
+
     public function getDiscountPercentageAttribute()
     {
         if ($this->price <= 0) {
@@ -151,44 +178,34 @@ class Test extends Model
         return round(($this->sale / $this->price) * 100);
     }
 
-    /**
-     * آیا رایگان است؟
-     */
     public function getIsFreeAttribute()
     {
         return $this->final_price <= 0;
     }
 
-    /**
-     * URL تصویر
-     */
     public function getImageUrlAttribute()
     {
         return $this->image ? asset('storage/' . $this->image) : null;
     }
 
-    /**
-     * زمان مورد نیاز به صورت قابل خواندن
-     */
     public function getRequiredTimeAttribute()
     {
-        if ($this->required_minutes < 60) {
-            return $this->required_minutes . ' دقیقه';
+        $minutes = $this->required_minutes;
+
+        if ($minutes < 60) {
+            return $minutes . ' دقیقه';
         }
 
-        $hours = floor($this->required_minutes / 60);
-        $minutes = $this->required_minutes % 60;
+        $hours = floor($minutes / 60);
+        $remaining = $minutes % 60;
 
-        if ($minutes == 0) {
+        if ($remaining == 0) {
             return $hours . ' ساعت';
         }
 
-        return $hours . ' ساعت و ' . $minutes . ' دقیقه';
+        return $hours . ' ساعت و ' . $remaining . ' دقیقه';
     }
 
-    /**
-     * رده سنی
-     */
     public function getAgeRangeAttribute()
     {
         if ($this->min_age == 0 && $this->max_age == 100) {
@@ -198,17 +215,12 @@ class Test extends Model
         return $this->min_age . ' تا ' . $this->max_age . ' سال';
     }
 
-    /**
-     * دریافت یا ایجاد متادیتای سئو
-     */
+
     public function getOrCreateSeoMeta()
     {
         return $this->seoMeta()->firstOrCreate([]);
     }
 
-    /**
-     * ارتباط با سوالات
-     */
     public function questions()
     {
         return $this->hasMany(Question::class);

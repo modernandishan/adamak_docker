@@ -2,11 +2,14 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\WalletCharge;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\Register;
 use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\EnsureMobileIsVerified;
+use App\Models\User;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -36,12 +39,23 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login(Login::class)
             ->registration(Register::class)
+            ->font(
+                'Vazir',
+                url: asset('css/filament/filament/custom.css'),
+                provider: LocalFontProvider::class
+            )
             ->userMenuItems([
-                'profile' => MenuItem::make()->label('پروفایل')->url(fn (): string => EditProfile::getUrl())
+                'profile' => MenuItem::make()->label('پروفایل')->url(fn(): string => EditProfile::getUrl()),
+                'wallet' => MenuItem::make()->label('کیف پول')->url(fn(): string => WalletCharge::getUrl())->icon('heroicon-o-banknotes'),
             ])
             ->passwordReset()
             ->colors([
+                'danger' => Color::Red,
+                'gray' => Color::Zinc,
+                'info' => Color::Blue,
                 'primary' => Color::Amber,
+                'success' => Color::Green,
+                'warning' => Color::Amber,
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
@@ -71,7 +85,7 @@ class AdminPanelProvider extends PanelProvider
                 FilamentCaptcha::make()
             ])
             //->spa()
-            ->spaUrlExceptions(fn (): array => [
+            ->spaUrlExceptions(fn(): array => [
                 /*url('/admin'),
                 PostResource::getUrl(),*/
             ])

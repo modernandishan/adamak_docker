@@ -2,7 +2,9 @@
 
 namespace App\Observers;
 
+use App\Models\Profile;
 use App\Models\User;
+use App\Models\Wallet;
 
 class UserObserver
 {
@@ -11,17 +13,31 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        // First, create the associated profile, as you already do.
-        $user->profile()->create();
+        if (!$user->profile) {
+            Profile::create(['user_id' => $user->id]);
+        }
 
-        // THE SMART PART:
-        // Check if the user ALREADY has a role.
-        // The SuperAdminSeeder assigns a role right after creation,
-        // so this condition will be FALSE for the super admin.
-        // It will be TRUE for a regular user registering through a form.
+        // ایجاد کیف پول خالی
+        if (!$user->wallet) {
+            Wallet::create(['user_id' => $user->id, 'balance' => 0]);
+        }
+
+        // اختصاص نقش پیش‌فرض
         if (!$user->hasAnyRole()) {
-            // Assign the default role for regular users.
             $user->assignRole('user');
+        }
+    }
+
+    public function retrieved(User $user)
+    {
+        // اطمینان از وجود پروفایل
+        if (!$user->profile) {
+            Profile::create(['user_id' => $user->id]);
+        }
+
+        // اطمینان از وجود کیف پول
+        if (!$user->wallet) {
+            Wallet::create(['user_id' => $user->id, 'balance' => 0]);
         }
     }
 
