@@ -38,7 +38,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <!-- end carousel -->
 
                                         </div>
                                     </div>
@@ -53,25 +52,40 @@
                                     </div>
 
                                     <div class="mt-4">
-                                        <form class="needs-validation" novalidate action="index.blade.php">
+                                        <form action="{{route('user.register-process')}}" method="POST">
+                                            @csrf
+                                            @if(request('ref'))
+                                                <input type="hidden" name="ref" value="{{ request('ref') }}">
+                                            @endif
+                                            
+                                            <div class="mb-3">
+                                                <label for="name" class="form-label">نام<span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" 
+                                                       value="{{ old('name') }}" placeholder="نام خود را وارد کنید" required>
+                                                @error('name')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
 
                                             <div class="mb-3">
-                                                <label for="useremail" class="form-label">ایمیل<span class="text-danger">*</span></label>
-                                                <input type="email" class="form-control" id="useremail" placeholder="آدرس ایمیل را وارد کنید" required>
-                                                <div class="invalid-feedback">لطفا ایمیل را وارد کنید</div>
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="username" class="form-label">نام کاربری<span class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" id="username" placeholder="نام کاربری را وارد کنید" required>
-                                                <div class="invalid-feedback">لطفا نام کاربری را وارد کنید</div>
+                                                <label for="family" class="form-label">نام خانوادگی<span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control @error('family') is-invalid @enderror" id="family" name="family" 
+                                                       value="{{ old('family') }}" placeholder="نام خانوادگی خود را وارد کنید" required>
+                                                @error('family')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
                                             </div>
 
+                                            @livewire('elements.register-otp-sender')
+
                                             <div class="mb-3">
-                                                <label class="form-label" for="password-input">رمز عبور</label>
-                                                <div class="position-relative auth-pass-inputgroup">
-                                                    <input type="password" class="form-control pe-5 password-input" onpaste="return false" placeholder="رمز عبور را وارد کنید" id="password-input" aria-describedby="passwordInput" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" required>
-                                                    <button class="btn btn-link position-absolute end-0 top-0 text-decoration-none text-muted password-addon" type="button" id="password-addon"><i class="ri-eye-fill align-middle"></i></button>
-                                                    <div class="invalid-feedback">لطفا رمز عبور را وارد کنید</div>
+                                                <label class="form-label" for="opt_code">کد یکبار مصرف<span class="text-danger">*</span></label>
+                                                <div class="position-relative mb-3">
+                                                    <input name="opt_code" type="text" class="form-control @error('opt_code') is-invalid @enderror" 
+                                                           placeholder="کد یکبار مصرف را وارد کنید" id="opt_code" required>
+                                                    @error('opt_code')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
                                             </div>
 
@@ -79,13 +93,15 @@
                                                 <p class="mb-0 fs-13 text-muted fst-italic">درصورت ثبت نام با شرایط آدمک موافقت کرده اید: <a href="#" class="text-primary text-decoration-underline fst-normal fw-semibold">شرایط استفاده</a></p>
                                             </div>
 
-                                            <div id="password-contain" class="p-3 bg-light mb-2 rounded">
-                                                <h5 class="fs-13">رمز عبور باید حاوی:</h5>
-                                                <p id="pass-length" class="invalid fs-13 mb-2">حداقل<b> 8 کاراکتر </b></p>
-                                                <p id="pass-lower" class="invalid fs-13 mb-2">در<b> حروف کوچک </b>حرف (a-z)</p>
-                                                <p id="pass-upper" class="invalid fs-13 mb-2">حداقل<b> حروف بزرگ </b>حرف (A-Z)</p>
-                                                <p id="pass-number" class="invalid fs-13 mb-0">حداقل<b> شماره </b>(0-9)</p>
-                                            </div>
+                                            @if ($errors->any())
+                                                <div class="alert alert-warning mt-4" role="alert">
+                                                    <ul class="m-0">
+                                                        @foreach ($errors->all() as $error)
+                                                            <li>{{ $error }}</li>
+                                                        @endforeach
+                                                    </ul>
+                                                </div>
+                                            @endif
 
                                             <div class="mt-4">
                                                 <button class="btn btn-success w-100" type="submit">ثبت نام کنید</button>
@@ -113,13 +129,9 @@
                             </div>
                         </div>
                     </div>
-                    <!-- end card -->
                 </div>
-                <!-- end col -->
 
             </div>
-            <!-- end row -->
         </div>
-        <!-- end container -->
     </div>
 @endsection

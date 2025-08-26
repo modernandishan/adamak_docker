@@ -146,6 +146,89 @@
             <!--end container-->
         </section>
 
+        <!-- start blog posts -->
+        <section class="section" id="latest-blog">
+            <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-lg-8">
+                        <div class="text-center mb-5">
+                            <h2 class="mb-3 ff-secondary fw-bold text-capitalize lh-base">آخرین مطالب <span class="text-primary">وبلاگ</span></h2>
+                            <p class="text-muted mb-4">
+                                با آخرین مقالات و مطالب آموزشی آدمک در حوزه روانشناسی کودک و نوجوان همراه باشید
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <!-- end row -->
+
+                <div class="row">
+                    @if($latestPosts->count() > 0)
+                        @foreach($latestPosts as $post)
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <div class="card h-100 shadow-sm">
+                                    @if($post->thumbnail)
+                                        <div class="position-relative">
+                                            <img src="{{Storage::url($post->thumbnail)}}" alt="{{$post->title}}" class="card-img-top" style="height: 200px; object-fit: cover;">
+                                            <div class="position-absolute top-0 end-0 m-2">
+                                                <span class="badge bg-primary-subtle text-primary">{{$post->category->title ?? 'عمومی'}}</span>
+                                            </div>
+                                        </div>
+                                    @endif
+                                    <div class="card-body d-flex flex-column">
+                                        <ul class="list-inline fs-14 text-muted mb-2">
+                                            <li class="list-inline-item">
+                                                <i class="ri-calendar-line align-bottom me-1"></i>{{$post->jalali_published_at ?? $post->jalali_created_at}}</li>
+                                            <li class="list-inline-item">
+                                                <i class="ri-eye-line align-bottom me-1"></i>{{number_format($post->view_count)}} بازدید</li>
+                                        </ul>
+                                        <a href="{{route('blog.detail', $post->slug)}}" class="text-decoration-none">
+                                            <h5 class="mb-3 text-dark">{{$post->title}}</h5>
+                                        </a>
+                                        <p class="text-muted fs-14 mb-3 flex-grow-1">{{Str::limit(strip_tags($post->excerpt), 100)}}</p>
+
+                                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                                            <a href="{{route('blog.detail', $post->slug)}}" class="btn btn-soft-primary btn-sm">
+                                                بیشتر بدانید <i class="ri-arrow-left-line align-bottom ms-1"></i>
+                                            </a>
+                                            @if($post->author)
+                                                <small class="text-muted">
+                                                    <i class="ri-user-line me-1"></i>{{$post->author->name}} {{$post->author->family}}
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    @else
+                        <div class="col-12">
+                            <div class="text-center">
+                                <div class="avatar-lg mx-auto mb-4">
+                                    <div class="avatar-title bg-soft-info text-info rounded-circle">
+                                        <i class="ri-article-line fs-2"></i>
+                                    </div>
+                                </div>
+                                <h5 class="mb-3">هیچ مطلبی برای نمایش وجود ندارد</h5>
+                                <p class="text-muted mb-4">به زودی مطالب جدید اضافه خواهد شد</p>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+                @if($latestPosts->count() > 0)
+                    <div class="row">
+                        <div class="col-12 text-center mt-4">
+                            <a href="{{route('blog')}}" class="btn btn-primary">
+                                مشاهده تمام مطالب <i class="ri-arrow-left-line align-bottom ms-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            <!-- end container -->
+        </section>
+        <!-- end blog posts -->
+
         <!-- start features -->
         <section class="section">
             <div class="container">
@@ -931,58 +1014,6 @@
         </section>
         <!-- end candidates -->
 
-        <!-- start blog -->
-        <section class="section" id="blog">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-lg-8">
-                        <div class="text-center mb-5">
-                            <h2 class="mb-3 ff-secondary fw-bold text-capitalize lh-base"> آخرین مطالب <span class="text-primary">وبلاگ</span></h2>
-                            <p class="text-muted mb-4">
-
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <!-- end row -->
-
-                <div class="row">
-                    @if($latestPosts->count() > 0)
-                        @foreach($latestPosts as $post)
-                            <div class="col-lg-4 col-md-6">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <img src="{{Storage::url($post->thumbnail)}}" alt="" class="img-fluid rounded">
-                                    </div>
-                                    <div class="card-body">
-                                        <ul class="list-inline fs-14 text-muted">
-                                            <li class="list-inline-item">
-                                                <i class="ri-calendar-line align-bottom me-1"></i>30 اکتبر 2021</li>
-                                            <li class="list-inline-item">
-                                                <i class="ri-message-2-line align-bottom me-1"></i>364 نظر</li>
-                                        </ul>
-                                        <a href="javascript:void(0);">
-                                            <h5>برنامه های خود را به روش خود طراحی کنید؟</h5>
-                                        </a>
-                                        <p class="text-muted fs-14">یکی از معایب Lorum Ipsum این است که در طرح های لاتین حروف خاصی بیشتر از بقیه ظاهر می شوند.</p>
-
-                                        <div>
-                                            <a href="#!" class="link-success">بیشتر بدانید<i class="ri-arrow-left-line align-bottom ms-1"></i></a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    @else
-                        <p class="text-center">
-                            <strong>هیچ پستی برای نمایش وجود ندارد.</strong>
-                        </p>
-                    @endif
-                </div>
-            </div>
-            <!-- end container -->
-        </section>
-        <!-- end blog -->
 
         <!-- start cta -->
         <section class="py-5 bg-primary position-relative">

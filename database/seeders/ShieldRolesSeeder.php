@@ -12,25 +12,21 @@ class ShieldRolesSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::create([
-            'name' => 'user',
-            'guard_name' => 'web',
-        ]);
-        Role::create([
-            'name' => 'marketer',
-            'guard_name' => 'web',
-        ]);
-        Role::create([
-            'name' => 'consultant',
-            'guard_name' => 'web',
-        ]);
-        Role::create([
-            'name' => 'admin',
-            'guard_name' => 'web',
-        ]);
-        Role::create([
-            'name' => 'super_admin',
-            'guard_name' => 'web',
-        ]);
+        $roles = [
+            'user',
+            'marketer',
+            'consultant',
+            'admin',
+            'super_admin',
+        ];
+
+        foreach ($roles as $roleName) {
+            if (! Role::where('name', $roleName)->where('guard_name', 'web')->exists()) {
+                Role::create([
+                    'name' => $roleName,
+                    'guard_name' => 'web',
+                ]);
+            }
+        }
     }
 }

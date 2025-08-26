@@ -3,16 +3,13 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\PostCategoryResource\Pages;
-//use App\Filament\Admin\Resources\PostCategoryResource\RelationManagers;
+// use App\Filament\Admin\Resources\PostCategoryResource\RelationManagers;
 use App\Models\PostCategory;
-use Filament\Forms;
-use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -25,18 +22,27 @@ use FilamentTiptapEditor\Enums\TiptapOutput;
 use FilamentTiptapEditor\TiptapEditor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Illuminate\Support\Facades\Auth;
 
 class PostCategoryResource extends Resource
 {
     protected static ?string $model = PostCategory::class;
+
     protected static ?string $navigationIcon = 'heroicon-o-squares-2x2';
+
     protected static ?string $modelLabel = 'دسته‌بندی پست';
+
     protected static ?string $pluralModelLabel = 'دسته‌بندی پست‌ها';
+
     protected static ?string $navigationGroup = 'وبلاگ';
+
+    protected static ?int $navigationSort = 1;
+
     protected static ?string $pluralLabel = 'دسته‌بندی پست‌ها';
+
     protected static ?string $singularLabel = 'دسته‌بندی پست';
+
     protected static ?string $navigationLabel = 'دسته‌بندی پست‌ها';
+
     public static function form(Form $form): Form
     {
         return $form
@@ -237,6 +243,7 @@ class PostCategoryResource extends Resource
             //
         ];
     }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -244,10 +251,12 @@ class PostCategoryResource extends Resource
                 SoftDeletingScope::class,
             ]);
     }
+
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::whereNull('deleted_at')->count();
     }
+
     public static function getPages(): array
     {
         return [

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\FormSubmission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class FormSubmissionController extends Controller
 {
@@ -19,7 +18,7 @@ class FormSubmissionController extends Controller
 
         if ($existingSubmission) {
             return back()->withErrors([
-                'consultant' => 'شما قبلاً یک درخواست مشاوره در حال بررسی دارید و تا تعیین وضعیت آن، امکان ارسال درخواست جدید وجود ندارد.'
+                'consultant' => 'شما قبلاً یک درخواست مشاوره در حال بررسی دارید و تا تعیین وضعیت آن، امکان ارسال درخواست جدید وجود ندارد.',
             ]);
         }
 
@@ -74,5 +73,69 @@ class FormSubmissionController extends Controller
         ]);
 
         return back()->with('success', 'درخواست مشاوره شما با موفقیت ثبت شد و در حال بررسی است.');
+    }
+
+    public function marketer(Request $request)
+    {
+        // بررسی وجود درخواست بازاریابی در حال بررسی
+        $existingSubmission = FormSubmission::where('user_id', Auth::id())
+            ->where('type', 'marketer')
+            ->where('status', 'pending')
+            ->exists();
+
+        if ($existingSubmission) {
+            return back()->withErrors([
+                'marketer' => 'شما قبلاً یک درخواست بازاریابی در حال بررسی دارید و تا تعیین وضعیت آن، امکان ارسال درخواست جدید وجود ندارد.',
+            ]);
+        }
+
+        // اعتبارسنجی داده‌های فرم با پیام‌های فارسی
+        $validated = $request->validate([
+            'marketing_experience' => 'required|string|max:255',
+            'platforms' => 'required|array|min:1',
+            'platforms.*' => 'string|max:100',
+            'portfolio_url' => 'nullable|url|max:255',
+            'work_experience' => 'required|integer|min:0',
+            'marketing_skills' => 'nullable|string',
+            'description' => 'required|string|min:20',
+        ], [
+            'required' => 'فیلد :attribute الزامی است.',
+            'string' => 'فیلد :attribute باید متن باشد.',
+            'max' => 'فیلد :attribute نباید بیشتر از :max کاراکتر باشد.',
+            'integer' => 'فیلد :attribute باید عدد باشد.',
+            'min' => 'فیلد :attribute باید حداقل :min باشد.',
+            'url' => 'فیلد :attribute باید یک آدرس معتبر باشد.',
+            'array' => 'فیلد :attribute باید فهرستی از گزینه‌ها باشد.',
+            'platforms.min' => 'حداقل یک پلتفرم انتخاب کنید.',
+            'work_experience.min' => 'سابقه کار نمی‌تواند منفی باشد.',
+            'description.min' => 'توضیحات باید حداقل :min کاراکتر داشته باشد.',
+        ], [
+            'marketing_experience' => 'تجربه بازاریابی',
+            'platforms' => 'پلتفرم‌های بازاریابی',
+            'portfolio_url' => 'لینک نمونه کار',
+            'work_experience' => 'سابقه کار',
+            'marketing_skills' => 'مهارت‌های بازاریابی',
+            'description' => 'توضیحات',
+        ]);
+
+        // آماده سازی داده‌ها برای ذخیره
+        $data = [
+            'marketing_experience' => $validated['marketing_experience'],
+            'platforms' => $validated['platforms'],
+            'portfolio_url' => $validated['portfolio_url'] ?? null,
+            'work_experience' => $validated['work_experience'],
+            'marketing_skills' => $validated['marketing_skills'] ?? null,
+            'description' => $validated['description'],
+        ];
+
+        // ایجاد رکورد در دیتابیس
+        FormSubmission::create([
+            'type' => 'marketer',
+            'data' => $data,
+            'user_id' => Auth::id(),
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'درخواست بازاریابی شما با موفقیت ثبت شد و در حال بررسی است.');
     }
 }

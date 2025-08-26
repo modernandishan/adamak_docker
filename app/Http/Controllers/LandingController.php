@@ -6,10 +6,8 @@ use App\Models\Post;
 use App\Models\PostCategory;
 use App\Models\Test;
 use App\Models\TestCategory;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Morilog\Jalali\Jalalian;
 use Carbon\Carbon;
+use Morilog\Jalali\Jalalian;
 
 class LandingController extends Controller
 {
@@ -17,10 +15,12 @@ class LandingController extends Controller
     {
         $latestPosts = Post::published()
             ->orderBy('published_at', 'desc')
-            ->take(3)
+            ->take(4)
             ->get();
+
         return view('home', compact('latestPosts'));
     }
+
     public function blog()
     {
         $all_views = Post::sum('view_count');
@@ -100,7 +100,7 @@ class LandingController extends Controller
             ->firstOrFail();
 
         $viewed = session()->get('viewed_posts', []);
-        if (!in_array($post->id, $viewed)) {
+        if (! in_array($post->id, $viewed)) {
             $post->increment('view_count');
             session()->push('viewed_posts', $post->id);
         }
@@ -126,6 +126,7 @@ class LandingController extends Controller
             ->map(function ($test) {
                 try {
                     $jalaliDate = Jalalian::fromCarbon($test->created_at);
+
                     return [
                         'year_jalali' => $jalaliDate->getYear(),
                         'month_jalali' => $jalaliDate->getMonth(),
@@ -158,6 +159,7 @@ class LandingController extends Controller
                 ->filter(function ($test) use ($year, $month) {
                     try {
                         $jalaliDate = Jalalian::fromCarbon($test->created_at);
+
                         return $jalaliDate->getYear() == $year && $jalaliDate->getMonth() == $month;
                     } catch (\Exception $e) {
                         return false;
@@ -183,7 +185,7 @@ class LandingController extends Controller
 
         // دسته‌بندی‌های فعال
         $test_categories = TestCategory::active()
-            ->withCount(['tests' => function($query) {
+            ->withCount(['tests' => function ($query) {
                 $query->active()->published();
             }])
             ->ordered()
@@ -223,7 +225,7 @@ class LandingController extends Controller
 
         // دسته‌بندی‌های فعال
         $test_categories = TestCategory::active()
-            ->withCount(['tests' => function($query) {
+            ->withCount(['tests' => function ($query) {
                 $query->active()->published();
             }])
             ->ordered()
@@ -245,6 +247,7 @@ class LandingController extends Controller
             ->map(function ($test) {
                 try {
                     $jalaliDate = Jalalian::fromCarbon($test->created_at);
+
                     return [
                         'year_jalali' => $jalaliDate->getYear(),
                         'month_jalali' => $jalaliDate->getMonth(),
@@ -294,7 +297,7 @@ class LandingController extends Controller
 
         // دسته‌بندی‌های فعال
         $test_categories = TestCategory::active()
-            ->withCount(['tests' => function($query) {
+            ->withCount(['tests' => function ($query) {
                 $query->active()->published();
             }])
             ->ordered()
@@ -316,6 +319,7 @@ class LandingController extends Controller
             ->map(function ($test) {
                 try {
                     $jalaliDate = Jalalian::fromCarbon($test->created_at);
+
                     return [
                         'year_jalali' => $jalaliDate->getYear(),
                         'month_jalali' => $jalaliDate->getMonth(),
@@ -347,6 +351,7 @@ class LandingController extends Controller
             'archives'
         ));
     }
+
     public function testDetail($slug)
     {
         $test = Test::with(['category', 'questions' => function ($query) {
@@ -422,6 +427,7 @@ class LandingController extends Controller
                         }
 
                         $jalaliDate = Jalalian::fromCarbon($carbonDate);
+
                         return $jalaliDate->getYear() == $year && $jalaliDate->getMonth() == $month;
                     } catch (\Exception $e) {
                         return false;
@@ -459,7 +465,8 @@ class LandingController extends Controller
             'most_viewed_posts',
             'archives',
             'allTags' // ارسال تگ‌ها به ویو
-        ));    }
+        ));
+    }
 
     public function blogTag($tag)
     {

@@ -50,8 +50,14 @@ class OtpService
                 'code' => $code,
             ];
 
+            $patternCode = config('otp.patterns.'.$pattern);
+
+            if (! $patternCode) {
+                throw new Exception("OTP pattern '$pattern' is not configured or is null");
+            }
+
             $bulkId = $this->smsClient->sendPattern(
-                config('otp.patterns.'.str_replace('IPPANEL_', '', strtolower($pattern)).'_PATTERN'),
+                $patternCode,
                 config('otp.origin_number'),
                 $formattedMobile,
                 $patternValues

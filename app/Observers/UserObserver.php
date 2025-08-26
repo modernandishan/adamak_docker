@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\Wallet;
+use App\Services\ReferralService;
 
 class UserObserver
 {
@@ -13,30 +14,46 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        if (!$user->profile) {
+        if (! $user->profile) {
             Profile::create(['user_id' => $user->id]);
         }
 
         // ایجاد کیف پول خالی
-        if (!$user->wallet) {
+        if (! $user->wallet) {
             Wallet::create(['user_id' => $user->id, 'balance' => 0]);
         }
 
-        // اختصاص نقش پیش‌فرض
-        if (!$user->hasAnyRole()) {
+        // اختصاص نقش پیش‌فرض - فقط اگر در حالت seeding نباشیم
+        if (! $this->isSeeding() && ! $user->hasAnyRole()) {
             $user->assignRole('user');
         }
+
+        // پیوند دادن کاربر به معرف در صورت وجود کوکی معرفی
+        if (! $this->isSeeding()) {
+            $referralService = app(ReferralService::class);
+            $referralService->linkUserToReferral($user);
+        }
+    }
+
+    private function isSeeding(): bool
+    {
+        return app()->runningInConsole() && (
+            app()->bound('seeder') ||
+            in_array('db:seed', $_SERVER['argv'] ?? []) ||
+            str_contains(implode(' ', $_SERVER['argv'] ?? []), 'db:seed') ||
+            app()->runningUnitTests()
+        );
     }
 
     public function retrieved(User $user)
     {
         // اطمینان از وجود پروفایل
-        if (!$user->profile) {
+        if (! $user->profile) {
             Profile::create(['user_id' => $user->id]);
         }
 
         // اطمینان از وجود کیف پول
-        if (!$user->wallet) {
+        if (! $user->wallet) {
             Wallet::create(['user_id' => $user->id, 'balance' => 0]);
         }
     }

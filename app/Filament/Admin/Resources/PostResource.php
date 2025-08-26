@@ -3,12 +3,10 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\PostResource\Pages;
-//use App\Filament\Admin\Resources\PostResource\RelationManagers;
+// use App\Filament\Admin\Resources\PostResource\RelationManagers;
 use App\Models\Post;
-use Filament\Forms\Components\DatePicker;
-use FilamentTiptapEditor\Extensions\Extensions\StyleExtension;
 use Filament\Forms;
-use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Grid;
@@ -34,11 +32,19 @@ class PostResource extends Resource
     protected static ?string $model = Post::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-squares-plus';
+
     protected static ?string $modelLabel = 'پست';
+
     protected static ?string $pluralModelLabel = 'پست‌ها';
+
     protected static ?string $navigationGroup = 'وبلاگ';
+
+    protected static ?int $navigationSort = 2;
+
     protected static ?string $pluralLabel = 'پست‌ها';
+
     protected static ?string $singularLabel = 'پست';
+
     protected static ?string $navigationLabel = 'پست‌ها';
 
     public static function form(Form $form): Form
@@ -113,7 +119,7 @@ class PostResource extends Resource
                                                             ->required(),
                                                     ])
                                                     ->collapsible()
-                                                    ->itemLabel('نام تصویر')
+                                                    ->itemLabel('نام تصویر'),
                                             ])
                                             ->collapsible()
                                             ->itemLabel('عنوان گالری')
@@ -312,13 +318,13 @@ class PostResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data) {
                         return $query
-                            ->when($data['from'], fn($q) => $q->whereDate('published_at', '>=', $data['from']))
-                            ->when($data['to'], fn($q) => $q->whereDate('published_at', '<=', $data['to']));
+                            ->when($data['from'], fn ($q) => $q->whereDate('published_at', '>=', $data['from']))
+                            ->when($data['to'], fn ($q) => $q->whereDate('published_at', '<=', $data['to']));
                     }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                //Tables\Actions\EditAction::make(),
+                // Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
                 Tables\Actions\ForceDeleteAction::make(),
                 Tables\Actions\RestoreAction::make(),

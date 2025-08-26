@@ -54,17 +54,18 @@
                             <form method="POST" action="{{ route('user.wallet.charge.submit') }}">
                                 @csrf
                                 <div class="mb-3">
-                                    <label for="amount" class="form-label">مبلغ شارژ (ریال)</label>
+                                    <label for="amount" class="form-label">مبلغ شارژ (تومان)</label>
                                     <input
                                         type="number"
                                         class="form-control"
                                         id="amount"
                                         name="amount"
-                                        min="100000"
+                                        min="{{ \App\Services\PaymentGatewayService::getMinChargeAmount() }}"
+                                        max="{{ \App\Services\PaymentGatewayService::getMaxChargeAmount() }}"
                                         required
-                                        placeholder="حداقل 100000 ریال"
+                                        placeholder="حداقل {{ number_format(\App\Services\PaymentGatewayService::getMinChargeAmount()) }} تومان"
                                     >
-                                    <div class="form-text">مبلغ را به ریال وارد کنید</div>
+                                    <div class="form-text">مبلغ را به تومان وارد کنید (حداقل: {{ number_format(\App\Services\PaymentGatewayService::getMinChargeAmount()) }} تومان - حداکثر: {{ number_format(\App\Services\PaymentGatewayService::getMaxChargeAmount()) }} تومان)</div>
                                 </div>
 
                                 <button type="submit" class="btn btn-primary w-100">
@@ -93,7 +94,7 @@
                                         <thead>
                                         <tr>
                                             <th>#</th>
-                                            <th>مبلغ (ریال)</th>
+                                            <th>مبلغ (تومان)</th>
                                             <th>نوع</th>
                                             <th>وضعیت</th>
                                             <th>زمان</th>

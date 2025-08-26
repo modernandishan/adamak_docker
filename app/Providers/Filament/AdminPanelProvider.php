@@ -2,12 +2,15 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Admin\Pages\ConsultantDashboard;
+use App\Filament\Admin\Pages\ConsultantTestDetails;
+use App\Filament\Admin\Pages\Dashboard;
 use App\Filament\Admin\Pages\WalletCharge;
+use App\Filament\Admin\Resources\AutomaticCommissionResource;
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Auth\Register;
 use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\EnsureMobileIsVerified;
-use App\Models\User;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
@@ -15,7 +18,7 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\MenuItem;
-use Filament\Pages;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -33,7 +36,7 @@ class AdminPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
         return $panel
-            //->topNavigation()
+            // ->topNavigation()
             ->unsavedChangesAlerts()
             ->id('admin')
             ->path('admin')
@@ -45,8 +48,20 @@ class AdminPanelProvider extends PanelProvider
                 provider: LocalFontProvider::class
             )
             ->userMenuItems([
-                'profile' => MenuItem::make()->label('پروفایل')->url(fn(): string => EditProfile::getUrl()),
-                'wallet' => MenuItem::make()->label('کیف پول')->url(fn(): string => WalletCharge::getUrl())->icon('heroicon-o-banknotes'),
+                'profile' => MenuItem::make()->label('پروفایل')->url(fn (): string => EditProfile::getUrl()),
+                'wallet' => MenuItem::make()->label('کیف پول')->url(fn (): string => WalletCharge::getUrl())->icon('heroicon-o-banknotes'),
+                'website' => MenuItem::make()
+                    ->label('بازگشت به وبسایت')
+                    ->url('http://localhost:8081')
+                    ->icon('heroicon-o-globe-alt')
+                    ->openUrlInNewTab(),
+            ])
+            ->navigationItems([
+                NavigationItem::make('بازگشت به وبسایت')
+                    ->url('http://localhost:8081')
+                    ->icon('heroicon-o-globe-alt')
+                    ->openUrlInNewTab()
+                    ->sort(-1),
             ])
             ->passwordReset()
             ->colors([
@@ -59,14 +74,19 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->discoverPages(in: app_path('Filament/Admin/Pages'), for: 'App\\Filament\\Admin\\Pages')
+            ->resources([
+                AutomaticCommissionResource::class,
+            ])
             ->pages([
-                Pages\Dashboard::class,
+                Dashboard::class,
                 EditProfile::class,
+                ConsultantDashboard::class,
+                ConsultantTestDetails::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Admin/Widgets'), for: 'App\\Filament\\Admin\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -82,10 +102,10 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
-                FilamentCaptcha::make()
+                FilamentCaptcha::make(),
             ])
-            //->spa()
-            ->spaUrlExceptions(fn(): array => [
+            // ->spa()
+            ->spaUrlExceptions(fn (): array => [
                 /*url('/admin'),
                 PostResource::getUrl(),*/
             ])

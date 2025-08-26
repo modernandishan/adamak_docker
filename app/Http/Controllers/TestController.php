@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Answer;
 use App\Models\Attempt;
 use App\Models\Test;
-use App\Models\Family;
-use App\Models\Answer;
-use App\Models\Question;
-use App\Models\Wallet;
-use App\Models\WalletTransaction;
+use App\Services\ConsultantAssignmentService;
+use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class TestController extends Controller
 {
@@ -47,7 +44,7 @@ class TestController extends Controller
         return view('test-start', compact('test', 'families', 'attempt'));
     }
 
-    public function submitTest(Request $request, $slug)
+    public function submitTest(Request $request, $slug, ReferralService $referralService)
     {
         $test = Test::where('slug', $slug)
             ->where('status', 'Published')
@@ -61,7 +58,7 @@ class TestController extends Controller
         // اعتبارسنجی انتخاب خانواده برای آزمون‌های نیازمند
         if ($test->is_need_family) {
             $request->validate([
-                'family_id' => 'required|exists:families,id,user_id,' . $user->id
+                'family_id' => 'required|exists:families,id,user_id,'.$user->id,
             ]);
 
             $attempt->family_id = $request->family_id;
@@ -95,12 +92,12 @@ class TestController extends Controller
         $validated = $request->validate($rules, $messages);
 
         // تراکنش دیتابیس برای اتمیک بودن عملیات
-        return DB::transaction(function () use ($user, $test, $finalPrice, $questions, $validated, $attempt) {
+        return DB::transaction(function () use ($user, $test, $finalPrice, $questions, $validated, $attempt, $referralService) {
             // کسر هزینه از کیف پول برای آزمون‌های پولی
             if ($finalPrice > 0) {
                 $wallet = $user->wallet()->lockForUpdate()->first();
 
-                if (!$wallet || $wallet->balance < $finalPrice) {
+                if (! $wallet || $wallet->balance < $finalPrice) {
                     return back()->with('error', 'موجودی کیف پول شما برای این آزمون کافی نیست!')
                         ->withInput();
                 }
@@ -111,11 +108,21 @@ class TestController extends Controller
                     "هزینه آزمون: {$test->title}"
                 );
 
-                if (!$transaction) {
+                if (! $transaction) {
                     throw new \Exception('کسر از کیف پول با خطا مواجه شد');
                 }
 
                 $attempt->wallet_transaction_id = $transaction->id;
+
+                // ایجاد کمیسیون برای بازاریاب در صورت وجود
+                if ($user->referred_by) {
+                    $referralService->calculateAndCreateCommission(
+                        $user,
+                        'test_purchase',
+                        $attempt->id,
+                        $finalPrice
+                    );
+                }
             }
 
             // ذخیره پاسخ‌ها
@@ -139,12 +146,26 @@ class TestController extends Controller
                 }
             }
 
+            // تخصیص مشاور با استفاده از الگوریتم وزن‌دهی
+            $consultantService = new ConsultantAssignmentService;
+            $assignedConsultant = $consultantService->assignConsultantToAttempt();
+
+            if ($assignedConsultant) {
+                $attempt->assigned_consultant_id = $assignedConsultant->id;
+                $attempt->assigned_at = now();
+            }
+
             // تکمیل Attempt
             $attempt->completed_at = now();
             $attempt->save();
 
-            return redirect()->route('tests')
-                ->with('success', 'پاسخ‌های شما با موفقیت ثبت شد و آزمون تکمیل گردید');
+            $successMessage = 'پاسخ‌های شما با موفقیت ثبت شد و آزمون تکمیل گردید';
+            if ($assignedConsultant) {
+                $successMessage .= ' و به مشاور اختصاص داده شد.';
+            }
+
+            return redirect()->route('tests.index')
+                ->with('success', $successMessage);
         });
     }
 }

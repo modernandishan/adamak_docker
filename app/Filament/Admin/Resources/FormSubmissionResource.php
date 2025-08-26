@@ -4,7 +4,6 @@ namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\FormSubmissionResource\Pages;
 use App\Models\FormSubmission;
-use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -17,8 +16,11 @@ class FormSubmissionResource extends Resource
     protected static ?string $model = FormSubmission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $modelLabel = 'درخواست';
+
     protected static ?string $pluralModelLabel = 'درخواست‌ها';
+
     protected static ?string $navigationGroup = 'مدیریت فرم‌ها';
 
     public static function form(Form $form): Form
@@ -38,6 +40,7 @@ class FormSubmissionResource extends Resource
                             ->label('نوع درخواست')
                             ->options([
                                 'consultant' => 'مشاوره',
+                                'marketer' => 'بازاریابی',
                                 'recruitment' => 'جذب نیرو',
                                 // انواع دیگر فرم‌ها را اینجا اضافه کنید
                             ])
@@ -97,31 +100,37 @@ class FormSubmissionResource extends Resource
                     ->sortable()
                     ->searchable(),
 
-                Tables\Columns\BadgeColumn::make('type')
+                Tables\Columns\TextColumn::make('type')
                     ->label('نوع')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'consultant' => 'مشاوره',
+                        'marketer' => 'بازاریابی',
                         'recruitment' => 'جذب نیرو',
                         default => $state,
                     })
-                    ->colors([
-                        'primary' => 'consultant',
-                        'success' => 'recruitment',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'consultant' => 'primary',
+                        'marketer' => 'info',
+                        'recruitment' => 'success',
+                        default => 'gray',
+                    })
                     ->sortable(),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label('وضعیت')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'pending' => 'در انتظار',
                         'approved' => 'تایید شده',
                         'rejected' => 'رد شده',
                     })
-                    ->colors([
-                        'warning' => 'pending',
-                        'success' => 'approved',
-                        'danger' => 'rejected',
-                    ])
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -140,6 +149,7 @@ class FormSubmissionResource extends Resource
                     ->label('نوع درخواست')
                     ->options([
                         'consultant' => 'مشاوره',
+                        'marketer' => 'بازاریابی',
                         'recruitment' => 'جذب نیرو',
                     ]),
 
@@ -176,11 +186,11 @@ class FormSubmissionResource extends Resource
                 Tables\Actions\Action::make('downloadResume')
                     ->label('دانلود رزومه')
                     ->icon('heroicon-o-document-arrow-down')
-                    ->url(fn (FormSubmission $record): string => $record->data['resume_path']
-                        ? asset('storage/' . $record->data['resume_path'])
+                    ->url(fn (FormSubmission $record): string => isset($record->data['resume_path'])
+                        ? asset('storage/'.$record->data['resume_path'])
                         : '#')
                     ->openUrlInNewTab()
-                    ->visible(fn (FormSubmission $record): bool => !empty($record->data['resume_path'])),
+                    ->visible(fn (FormSubmission $record): bool => isset($record->data['resume_path']) && ! empty($record->data['resume_path'])),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -201,7 +211,7 @@ class FormSubmissionResource extends Resource
                             foreach ($records as $record) {
                                 $record->update(['status' => $data['status']]);
                             }
-                        })
+                        }),
                 ]),
             ]);
     }
@@ -218,7 +228,7 @@ class FormSubmissionResource extends Resource
         return [
             'index' => Pages\ListFormSubmissions::route('/'),
             'create' => Pages\CreateFormSubmission::route('/create'),
-            //'view' => Pages\ViewFormSubmission::route('/{record}'),
+            // 'view' => Pages\ViewFormSubmission::route('/{record}'),
             'edit' => Pages\EditFormSubmission::route('/{record}/edit'),
         ];
     }

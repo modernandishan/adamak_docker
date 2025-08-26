@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Wallet;
 use App\Models\WalletTransaction;
+use App\Services\PaymentGatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Shetabit\Multipay\Payment;
 use Shetabit\Multipay\Exceptions\InvalidPaymentException;
-use Shetabit\Multipay\Invoice;
 
 class WalletController extends Controller
 {
@@ -28,34 +26,55 @@ class WalletController extends Controller
     // ارسال درخواست به درگاه پرداخت
     public function sendToGateway(Request $request)
     {
-        $request->validate([
-            'amount' => 'required|numeric|min:100000',
-        ]);
+        $request->validate(PaymentGatewayService::getChargeAmountRules());
 
         $amount = (int) $request->input('amount');
 
-        $payment = new Payment(config('payment'));
-        $invoice = (new Invoice)->amount($amount);
+        // Validate amount using service
+        if (! PaymentGatewayService::validateChargeAmount($amount)) {
+            return back()->withErrors([
+                'amount' => 'مبلغ وارد شده خارج از محدوده مجاز است.',
+            ])->withInput();
+        }
 
-        return $payment
-            ->callbackUrl(route('wallet.callback'))
-            ->purchase($invoice, function ($driver, $transactionId) use ($amount) {
-                $user = Auth::user();
-                $wallet = $user->wallet()->firstOrCreate(
-                    ['user_id' => $user->id],
-                    ['balance' => 0]
-                );
+        try {
+            $payment = PaymentGatewayService::getPayment();
+            $invoice = PaymentGatewayService::createInvoice($amount);
 
-                $wallet->transactions()->create([
-                    'transaction_id' => $transactionId,
-                    'amount' => $amount,
-                    'type' => 'charge',
-                    'description' => 'در انتظار پرداخت',
-                    'status' => 'pending',
-                ]);
-            })
-            ->pay()
-            ->render();
+            $result = $payment
+                ->callbackUrl(route('wallet.callback'))
+                ->purchase($invoice, function ($driver, $transactionId) use ($amount) {
+                    $user = Auth::user();
+                    $wallet = $user->wallet()->firstOrCreate(
+                        ['user_id' => $user->id],
+                        ['balance' => 0]
+                    );
+
+                    $wallet->transactions()->create([
+                        'transaction_id' => $transactionId,
+                        'amount' => $amount,
+                        'type' => 'charge',
+                        'description' => 'در انتظار پرداخت',
+                        'status' => 'pending',
+                    ]);
+                })
+                ->pay();
+
+            // If we get here, the payment was successful and we should redirect
+            return $result->render();
+
+        } catch (\Exception $e) {
+            // Log the error for debugging
+            \Log::error('Payment gateway error: '.$e->getMessage(), [
+                'amount' => $amount,
+                'user_id' => Auth::id(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors([
+                'payment' => 'خطا در اتصال به درگاه پرداخت: '.$e->getMessage(),
+            ])->withInput();
+        }
     }
 
     // پردازش بازگشت از درگاه پرداخت
@@ -64,7 +83,7 @@ class WalletController extends Controller
         $status = $request->input('Status');
         $authority = $request->input('Authority');
 
-        if (!$status || !$authority) {
+        if (! $status || ! $authority) {
             abort(400, 'اطلاعات بازگشتی نامعتبر است.');
         }
 
@@ -79,11 +98,11 @@ class WalletController extends Controller
             ]);
 
             return redirect()->route('user.wallet.charge.form')->withErrors([
-                'payment' => 'پرداخت توسط شما لغو شد.'
+                'payment' => 'پرداخت توسط شما لغو شد.',
             ]);
         }
 
-        $payment = new Payment(config('payment'));
+        $payment = PaymentGatewayService::getPayment();
 
         try {
             $receipt = $payment->amount($transaction->amount)
@@ -100,17 +119,17 @@ class WalletController extends Controller
             $wallet->increment('balance', $transaction->amount);
 
             return redirect()->route('user.wallet.charge.form')->with([
-                'success' => 'کیف پول شما با موفقیت شارژ شد. مبلغ: ' . number_format($transaction->amount) . ' ریال'
+                'success' => 'کیف پول شما با موفقیت شارژ شد. مبلغ: '.number_format($transaction->amount).' تومان',
             ]);
 
         } catch (InvalidPaymentException $e) {
             $transaction->update([
                 'status' => 'failed',
-                'description' => 'خطا در پرداخت: ' . $e->getMessage(),
+                'description' => 'خطا در پرداخت: '.$e->getMessage(),
             ]);
 
             return redirect()->route('user.wallet.charge.form')->withErrors([
-                'payment' => 'خطا در پرداخت: ' . $e->getMessage()
+                'payment' => 'خطا در پرداخت: '.$e->getMessage(),
             ]);
         }
     }

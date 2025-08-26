@@ -98,6 +98,43 @@
 
                             @livewire('elements.user-dashboard-taken-tests')
 
+                            <!-- Consultant Dashboard Card (only for consultants) -->
+                            @hasrole('consultant')
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card card-animate bg-warning">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center">
+                                            <div class="flex-grow-1 overflow-hidden">
+                                                <p class="text-uppercase fw-bold text-white-50 text-truncate mb-0">پنل مشاوره</p>
+                                            </div>
+                                            <div class="flex-shrink-0">
+                                                <h5 class="text-white fs-14 mb-0">
+                                                    <i class="ri-user-star-line fs-13 align-middle"></i>
+                                                </h5>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-end justify-content-between mt-4">
+                                            <div>
+                                                <h4 class="fs-22 fw-bold ff-secondary text-white mb-4">
+                                                    <span class="counter-value" data-target="{{ Auth::user()->assignedAttempts()->whereNotNull('assigned_at')->count() }}">0</span>
+                                                    آزمون
+                                                </h4>
+                                                <a href="{{ route('consultant.dashboard') }}" class="text-decoration-underline text-white-50">
+                                                    مشاهده آزمون‌های اختصاص یافته
+                                                </a>
+                                            </div>
+                                            <div class="avatar-sm flex-shrink-0">
+                                                <span class="avatar-title bg-white bg-opacity-10 rounded fs-3">
+                                                    <i class="bx bx-user-voice text-white"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            @endhasrole
+
+                            @hasrole('marketer')
                             <div class="col-xl-3 col-md-6">
                                 <!-- card -->
                                 <div class="card card-animate bg-success">
@@ -108,13 +145,15 @@
                                             </div>
                                             <div class="flex-shrink-0">
                                                 <h5 class="text-white fs-14 mb-0">
-                                                    <i class="ri-arrow-right-up-line fs-13 align-middle"></i>+29.08٪</h5>
+                                                    <i class="ri-arrow-right-up-line fs-13 align-middle"></i>{{ Auth::user()->referrals()->whereNotNull('referred_user_id')->count() }} کاربر</h5>
                                             </div>
                                         </div>
                                         <div class="d-flex align-items-end justify-content-between mt-4">
                                             <div>
-                                                <h4 class="fs-22 fw-bold ff-secondary text-white mb-4"><span class="counter-value" data-target="183.35">0</span>م</h4>
-                                                <a href="" class="text-decoration-underline text-white-50">جزئیات را ببینید</a>
+                                                <h4 class="fs-22 fw-bold ff-secondary text-white mb-4">
+                                                    <span class="counter-value" data-target="{{ Auth::user()->commissions()->sum('commission_amount') }}">0</span> تومان
+                                                </h4>
+                                                <a href="{{ route('marketer.dashboard') }}" class="text-decoration-underline text-white-50">مشاهده مشتریان و کمیسیون‌ها</a>
                                             </div>
                                             <div class="avatar-sm flex-shrink-0">
                                                         <span class="avatar-title bg-white bg-opacity-10 rounded fs-3">
@@ -125,6 +164,7 @@
                                     </div><!-- end card body -->
                                 </div><!-- end card -->
                             </div>
+                            @endhasrole
 
                             @livewire('elements.user-dashboard-wallet-card')
                         </div>
@@ -316,16 +356,50 @@
 
                                 @livewire('elements.dashboard-average-stars')
 
-                                <div class="card sidebar-alert bg-light border-0 text-center mx-4 mb-0 mt-3">
-                                    <div class="card-body">
-                                        <img src="../../assets/images/giftbox.png" alt="">
-                                        <div class="mt-4">
-                                            <h5>از فروشنده جدید دعوت کنید</h5>
-                                            <p class="text-muted lh-base">یک فروشنده جدید را به ما معرفی کنید و به ازای هر مراجعه 100 دلار کسب کنید.</p>
-                                            <button type="button" class="btn btn-primary btn-label rounded-pill"><i class="ri-mail-fill label-icon align-middle rounded-pill fs-16 me-2"></i>اکنون دعوت کنید</button>
+                                @if($user->hasRole('marketer'))
+                                    <div class="card sidebar-alert bg-light border-0 text-center mx-4 mb-0 mt-3">
+                                        <div class="card-body">
+                                            <img src="../../assets/images/giftbox.png" alt="">
+                                            <div class="mt-4">
+                                                <h5>لینک معرفی شما</h5>
+                                                <p class="text-muted lh-base">با استفاده از لینک زیر کاربران جدید را به آدمک معرفی کنید و کمیسیون دریافت کنید.</p>
+                                                @php
+                                                    $referralService = app(\App\Services\ReferralService::class);
+                                                    $referralUrl = $referralService->getReferralUrl($user);
+                                                @endphp
+                                                <div class="input-group mb-3">
+                                                    <input type="text" class="form-control" id="referralLink" value="{{ $referralUrl }}" readonly>
+                                                    <button class="btn btn-outline-secondary" type="button" onclick="copyReferralLink()">
+                                                        <i class="ri-file-copy-line"></i>
+                                                    </button>
+                                                </div>
+                                                <small class="text-muted">کمیسیون شما: {{ $user->commission_percentage }}%</small>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+
+                                    <script>
+                                    function copyReferralLink() {
+                                        const linkInput = document.getElementById('referralLink');
+                                        linkInput.select();
+                                        linkInput.setSelectionRange(0, 99999);
+                                        navigator.clipboard.writeText(linkInput.value);
+                                        
+                                        // Show success message
+                                        const btn = event.target.closest('button');
+                                        const originalHtml = btn.innerHTML;
+                                        btn.innerHTML = '<i class="ri-check-line"></i>';
+                                        btn.classList.add('btn-success');
+                                        btn.classList.remove('btn-outline-secondary');
+                                        
+                                        setTimeout(() => {
+                                            btn.innerHTML = originalHtml;
+                                            btn.classList.remove('btn-success');
+                                            btn.classList.add('btn-outline-secondary');
+                                        }, 2000);
+                                    }
+                                    </script>
+                                @endif
 
                             </div>
                         </div> <!-- end card-->

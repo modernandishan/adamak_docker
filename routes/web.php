@@ -1,16 +1,20 @@
 <?php
 
+use App\Filament\Admin\Pages\ConsultantTestDetails;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ConsultantController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FormSubmissionController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\MarketerController;
 use App\Http\Controllers\PostCategoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Route;
 
+//
 Route::get('/', [LandingController::class, 'home'])->name('home');
 Route::view('/contact', '')->name('contact');
 Route::prefix('blog')->name('blog')->group(function () {
@@ -23,6 +27,26 @@ Route::prefix('blog')->name('blog')->group(function () {
 });
 Route::get('/wallet/callback', [WalletController::class, 'callback'])->name('wallet.callback');
 Route::post('/send-to-gateway', [WalletController::class, 'SendToGateway'])->name('send.to.gateway');
+
+// Consultant routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/admin/consultant/test-details/{attempt}', ConsultantTestDetails::class)
+        ->name('filament.admin.pages.consultant-test-details');
+
+    // Consultant dashboard (outside Filament)
+    Route::prefix('consultant')->name('consultant.')->middleware('role:consultant')->group(function () {
+        Route::get('/dashboard', [ConsultantController::class, 'dashboard'])->name('dashboard');
+        Route::get('/test/{attempt}', [ConsultantController::class, 'testDetails'])->name('test-details');
+        Route::post('/test/{attempt}/response', [ConsultantController::class, 'storeResponse'])->name('store-response');
+    });
+
+    // Marketer dashboard (outside Filament)
+    Route::prefix('marketer')->name('marketer.')->middleware('role:marketer')->group(function () {
+        Route::get('/dashboard', [MarketerController::class, 'dashboard'])->name('dashboard');
+        Route::get('/referrals', [MarketerController::class, 'referrals'])->name('referrals');
+        Route::get('/commissions', [MarketerController::class, 'commissions'])->name('commissions');
+    });
+});
 
 Route::get('/test/{slug}', [LandingController::class, 'testDetail'])->name('test.detail');
 Route::prefix('tests')->name('tests.')->group(function () {
@@ -51,6 +75,10 @@ Route::middleware('auth:sanctum')->prefix('user')->name('user.')->group(function
         Route::post('/update', [ProfileController::class, 'update'])->name('update');
     });
 
+    Route::prefix('consultant')->name('consultant.')->group(function () {
+        Route::put('/biography/update', [ProfileController::class, 'updateConsultantBiography'])->name('biography.update');
+    });
+
     Route::prefix('family')->name('family.')->group(function () {
         Route::get('/show', [FamilyController::class, 'index'])->name('show');
         Route::get('/add', [FamilyController::class, 'add'])->name('add');
@@ -62,6 +90,7 @@ Route::middleware('auth:sanctum')->prefix('user')->name('user.')->group(function
 
     Route::prefix('form-submissions')->name('form-submissions.')->group(function () {
         Route::post('/consultant', [FormSubmissionController::class, 'consultant'])->name('consultant');
+        Route::post('/marketer', [FormSubmissionController::class, 'marketer'])->name('marketer');
     });
 
 });
@@ -74,6 +103,7 @@ Route::controller(AuthController::class)
         Route::get('/login', 'login')->name('login');
         Route::post('/login-process', 'loginProcess')->name('login-process');
         Route::get('/register', 'register')->name('register');
+        Route::post('/register-process', 'registerProcess')->name('register-process');
         Route::get('/reset-password', 'resetPassword')->name('reset-password');
     });
 

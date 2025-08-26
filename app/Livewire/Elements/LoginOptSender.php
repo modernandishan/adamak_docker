@@ -10,17 +10,20 @@ use Livewire\Component;
 class LoginOptSender extends Component
 {
     public $mobile;
+
     public function SendLoginOpt(OtpService $otpService): void
     {
         // اعتبارسنجی شماره موبایل
         if (empty($this->mobile)) {
             session()->flash('error', 'شماره موبایل را باید وارد کنید.');
+
             return;
         }
 
         // اعتبارسنجی فرمت شماره موبایل
-        if (!preg_match('/^09[0-9]{9}$/', $this->mobile)) {
+        if (! preg_match('/^09[0-9]{9}$/', $this->mobile)) {
             session()->flash('error', 'فرمت شماره موبایل نامعتبر است.');
+
             return;
         }
 
@@ -34,20 +37,21 @@ class LoginOptSender extends Component
             $secondsPassed = $lastSentCarbon->diffInSeconds($now);
 
             if ($secondsPassed < $cooldown) {
-                $secondsLeft = $cooldown - $secondsPassed;
-                session()->flash('send-opt-waiting', 'برای ارسال مجدد کد، باید ' . $secondsLeft . ' ثانیه صبر کنید.');
+                $secondsLeft = (int) ($cooldown - $secondsPassed);
+                session()->flash('send-opt-waiting', 'برای ارسال مجدد کد، باید '.$secondsLeft.' ثانیه صبر کنید.');
+
                 return;
             }
         }
 
         // ارسال کد
         try {
-            $otpService->sendOtp($this->mobile, 'IPPANEL_LOGIN_PATTERN', false);
+            $otpService->sendOtp($this->mobile, 'login', false);
             session(['otp_last_sent_at' => $now]);
             session()->flash('send-opt-success', "کد تأیید به شماره {$this->mobile} ارسال گردید.");
         } catch (Exception $e) {
             // استفاده از getMessage() برای نمایش خطای دقیق
-            session()->flash('send-opt-error', 'خطا در ارسال کد: ' . $e->getMessage());
+            session()->flash('send-opt-error', 'خطا در ارسال کد: '.$e->getMessage());
         }
     }
 

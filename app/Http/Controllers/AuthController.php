@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
 use App\Models\OtpCode;
 use App\Models\User;
+use App\Services\ReferralService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -65,6 +68,44 @@ class AuthController extends Controller
     public function register()
     {
         return view('register');
+    }
+
+    public function registerProcess(RegisterRequest $request, ReferralService $referralService)
+    {
+
+        $otp = OtpCode::where('mobile', $request->mobile)
+            ->where('code', $request->opt_code)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
+
+        if (! $otp) {
+            return back()->withErrors(['opt_code' => 'کد تأیید نامعتبر یا منقضی شده است.'])->withInput();
+        }
+
+        $user = User::create([
+            'name' => $request->name,
+            'family' => $request->family,
+            'mobile' => $request->mobile,
+            'mobile_verified_at' => Carbon::now(),
+            'referral_token' => Str::random(10),
+        ]);
+
+        // Handle referral code if provided
+        $refToken = $request->input('ref') ?: session('ref_token');
+        if ($refToken) {
+            $referralService->linkUserToReferral($user, $refToken);
+        }
+
+        OtpCode::where('mobile', $request->mobile)->delete();
+
+        $remember = false;
+        Auth::login($user, $remember);
+
+        $token = $user->createToken('auth-token', ['*'], null)->plainTextToken;
+
+        $request->session()->regenerate();
+
+        return redirect()->intended(route('user.dashboard'));
     }
 
     public function logout(Request $request)

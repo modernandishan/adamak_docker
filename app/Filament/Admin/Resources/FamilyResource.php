@@ -3,21 +3,22 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\FamilyResource\Pages;
-use App\Filament\Admin\Resources\FamilyResource\RelationManagers;
 use App\Models\Family;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class FamilyResource extends Resource
 {
     protected static ?string $model = Family::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-users';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
+    protected static ?string $navigationGroup = 'مدیریت کاربران';
+
+    protected static ?int $navigationSort = 5;
 
     public static function getModelLabel(): string
     {

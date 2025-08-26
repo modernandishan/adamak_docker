@@ -2,10 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Carbon;
 
 class Question extends Model
 {
@@ -24,9 +23,8 @@ class Question extends Model
         'sort_order',
         'hint',
         'explanation',
-        'admin_note'
+        'admin_note',
     ];
-
 
     protected $casts = [
         'settings' => 'array',
@@ -50,6 +48,14 @@ class Question extends Model
     public function test()
     {
         return $this->belongsTo(Test::class);
+    }
+
+    /**
+     * ارتباط با پاسخ‌ها
+     */
+    public function answers()
+    {
+        return $this->hasMany(Answer::class);
     }
 
     /**
@@ -96,7 +102,7 @@ class Question extends Model
      */
     public function validateOptions(): bool
     {
-        if (!$this->options) {
+        if (! $this->options) {
             return in_array($this->type, ['text', 'number', 'date', 'upload']);
         }
 

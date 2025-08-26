@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('settings', function (Blueprint $table) {
             $table->id();
-            $table->string('meta_title');
-            $table->text('meta_data');
-            $table->text('meta_description')->nullable();
+            $table->string('key')->unique();
+            $table->text('value');
+            $table->string('type')->default('string'); // string, integer, boolean, json
+            $table->string('group')->default('general'); // general, payment, system, etc.
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
